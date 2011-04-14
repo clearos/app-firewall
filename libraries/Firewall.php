@@ -77,6 +77,7 @@ require_once('Firewall.list.php');
 //-----------
 
 use \clearos\apps\base\Validation_Exception as Validation_Exception;
+use \clearos\apps\base\Engine_Exception as Engine_Exception;
 
 clearos_load_library('base/Validation_Exception');
 
