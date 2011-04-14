@@ -32,6 +32,12 @@
  */
 
 ///////////////////////////////////////////////////////////////////////////////
+// N A M E S P A C E
+///////////////////////////////////////////////////////////////////////////////
+
+namespace clearos\apps\firewall;
+
+///////////////////////////////////////////////////////////////////////////////
 // B O O T S T R A P
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -43,15 +49,36 @@ require_once($bootstrap . '/bootstrap.php');
 ///////////////////////////////////////////////////////////////////////////////
 
 clearos_load_language('base');
+clearos_load_language('network');
+clearos_load_language('firewall');
 
 ///////////////////////////////////////////////////////////////////////////////
 // D E P E N D E N C I E S
 ///////////////////////////////////////////////////////////////////////////////
 
-clearos_load_library('base/Daemon');
+// Classes
+//--------
+
+use \clearos\apps\base\Engine as Engine;
+use \clearos\apps\base\File as File;
+use \clearos\apps\base\Daemon as Daemon;
+use \clearos\apps\network\Network_Utils as Network_Utils;
+use \clearos\apps\network\Firewall_Rule as Firewall_Rule;
+
+clearos_load_library('base/Engine');
 clearos_load_library('base/File');
-clearos_load_library('firewall/FirewallRule');
-require_once("Firewall.list.php");
+clearos_load_library('base/Daemon');
+clearos_load_library('network/Network_Utils');
+clearos_load_library('firewall/Firewall_Rule');
+
+require_once('Firewall.list.php');
+
+// Exceptions
+//-----------
+
+use \clearos\apps\base\Validation_Exception as Validation_Exception;
+
+clearos_load_library('base/Validation_Exception');
 
 ///////////////////////////////////////////////////////////////////////////////
 // E X C E P T I O N  C L A S S E S
@@ -67,10 +94,10 @@ require_once("Firewall.list.php");
  * @copyright Copyright 2003-2010 ClearFoundation
  */
 
-class FirewallUndefinedRoleException extends EngineException
+class Firewall_Undefined_Role_Exception extends Engine_Exception
 {
 	/**
-	 * FirewallUndefinedRoleException constructor.
+	 * Firewall_Undefined_Role_Exception constructor.
 	 *
 	 * @param string $role undefined role
 	 * @param int $code error code
@@ -102,30 +129,30 @@ class Firewall extends Daemon
 	// C O N S T A N T S
 	///////////////////////////////////////////////////////////////////////////
 
-	const FILE_CONFIG = "/etc/firewall";
-	const FILE_CUSTOM_RULES = "/etc/rc.d/rc.firewall.local";
-	const CONSTANT_NOT_CONFIGURED = "notconfigured";
-	const CONSTANT_ENABLED = "enabled";
-	const CONSTANT_DISABLED = "disabled";
-	const CONSTANT_ON = "on";
-	const CONSTANT_OFF = "off";
-	const CONSTANT_NORMAL = "normal";
-	const CONSTANT_SPECIAL = "special";
-	const CONSTANT_PORT_RANGE= "portrange";
+	const FILE_CONFIG = '/etc/firewall';
+	const FILE_CUSTOM_RULES = '/etc/rc.d/rc.firewall.local';
+	const CONSTANT_NOT_CONFIGURED = 'notconfigured';
+	const CONSTANT_ENABLED = 'enabled';
+	const CONSTANT_DISABLED = 'disabled';
+	const CONSTANT_ON = 'on';
+	const CONSTANT_OFF = 'off';
+	const CONSTANT_NORMAL = 'normal';
+	const CONSTANT_SPECIAL = 'special';
+	const CONSTANT_PORT_RANGE= 'portrange';
 	const CONSTANT_AUTO = 1;
-	const CONSTANT_GATEWAY = "gateway";
-	const CONSTANT_STANDALONE = "standalone";
-	const CONSTANT_TRUSTEDSTANDALONE = "trustedstandalone";
-	const CONSTANT_TRUSTEDGATEWAY = "trustedgateway";
-	const CONSTANT_EXTERNAL = "EXTIF";
-	const CONSTANT_DMZ = "DMZIF";
-	const CONSTANT_LAN = "LANIF";
-	const CONSTANT_HOT_LAN = "HOTIF";
+	const CONSTANT_GATEWAY = 'gateway';
+	const CONSTANT_STANDALONE = 'standalone';
+	const CONSTANT_TRUSTEDSTANDALONE = 'trustedstandalone';
+	const CONSTANT_TRUSTEDGATEWAY = 'trustedgateway';
+	const CONSTANT_EXTERNAL = 'EXTIF';
+	const CONSTANT_DMZ = 'DMZIF';
+	const CONSTANT_LAN = 'LANIF';
+	const CONSTANT_HOT_LAN = 'HOTIF';
 	const CONSTANT_ALL_PORTS = 0;
-	const CONSTANT_ALL_PROTOCOLS = "ALL";
-	const CONSTANT_MULTIPATH = "MULTIPATH";
-	const CONSTANT_PROTOCOL_UDP = "UDP";
-	const CONSTANT_PROTOCOL_TCP = "TCP";
+	const CONSTANT_ALL_PROTOCOLS = 'ALL';
+	const CONSTANT_MULTIPATH = 'MULTIPATH';
+	const CONSTANT_PROTOCOL_UDP = 'UDP';
+	const CONSTANT_PROTOCOL_TCP = 'TCP';
 	// Number to start one-to-one NAT virtual IPs (i.e. eth0:200)
 	const CONSTANT_ONE_TO_ONE_NAT_START = 200;
 
@@ -143,10 +170,9 @@ class Firewall extends Daemon
 
 	public function __construct()
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
-		parent::__construct("firewall");
-
+		parent::__construct('firewall');
 	}
 
 	/**
@@ -155,9 +181,9 @@ class Firewall extends Daemon
 	 * @return array list of pre-defined ports
 	 */
 
-	public function GetStandardServiceList()
+	public function get_standard_service_list()
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		global $PORTS;
 
@@ -168,7 +194,7 @@ class Firewall extends Daemon
 		$servicelist = array();
 
 		foreach ($PORTS as $portinfo)
-			$hashservices[$portinfo[3]] = true;
+			$hashservices[$portinfo[3]] = TRUE;
 
 		while (list($key, $value) = each($hashservices))
 			array_push($servicelist, $key);
@@ -188,7 +214,7 @@ class Firewall extends Daemon
 
 	public function LookupService($protocol, $port)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		global $PORTS;
 
@@ -207,9 +233,9 @@ class Firewall extends Daemon
 	 * @return string name
 	 */
 
-	public function LookupHostMetainfo($host)
+	public function lookup_host_metainfo($host)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		global $DOMAINS;
 
@@ -217,44 +243,6 @@ class Firewall extends Daemon
 			if ($hostinfo[0] == $host)
 				return $hostinfo[1];
 		}
-	}
-
-	/**
-	 * Returns the current firewall mode.
-	 *
-	 * @return string firewall mode Firewall::CONSTANT_(AUTO, GATEWAY, or STANDALONE)
-	 * @throws EngineException
-	 */
-
-	public function GetMode()
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		try {
-			$file = new File(Firewall::FILE_CONFIG);
-			$retval = $file->LookupValue("/^MODE=/");
-		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
-		}
-
-		$retval = preg_replace("/\"/", "", $retval);
-		$retval = preg_replace("/\s.*/", "", $retval);
-
-		switch ($retval)
-		{
-		case "auto":
-			return Firewall::CONSTANT_AUTO;
-		case "gateway":
-			return Firewall::CONSTANT_GATEWAY;
-		case "standalone":
-			return Firewall::CONSTANT_STANDALONE;
-		case "trustedstandalone":
-			return Firewall::CONSTANT_TRUSTEDSTANDALONE;
-		case "trustedgateway":
-			return Firewall::CONSTANT_TRUSTEDGATEWAY;
-		}
-
-		return Firewall::CONSTANT_AUTO;
 	}
 
 	/**
@@ -269,7 +257,7 @@ class Firewall extends Daemon
 	 *  Firewall::CONSTANT_DMZ
 	 * 
 	 * Example:
-	 *  GetInterfaceDefinition(Firewall::CONSTANT_LAN)
+	 *  get_interface_definition(Firewall::CONSTANT_LAN)
 	 *  returns eth1 in most cases -- since this is the default.
 	 *
 	 * TODO: with multiple interfaces now allowed, we have to add
@@ -278,45 +266,45 @@ class Firewall extends Daemon
 	 *
 	 * @param string role Interface role
 	 * @return string interface Interface name
-	 * @throws EngineException, ValidationException
+	 * @throws Engine_Exception, ValidationException
 	 */
 
-	public function GetInterfaceDefinition($role)
+	public function get_interface_definition($role)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
 		if ($role == Firewall::CONSTANT_LAN) {
 			$key = Firewall::CONSTANT_LAN;
-			$default = "eth1";
+			$default = 'eth1';
 		} else if ($role == Firewall::CONSTANT_HOT_LAN) {
 			$key = Firewall::CONSTANT_HOT_LAN;
-			$default = "eth1";
+			$default = 'eth1';
 		} else if ($role == Firewall::CONSTANT_EXTERNAL) {
 			$key = Firewall::CONSTANT_EXTERNAL;
 			// If we see ppp0 defined, we assume it is either a DSL or dial-up
 			// connection to the Internet.
-			if (file_exists("/etc/sysconfig/network-scripts/ifcfg-ppp0"))
-				$default = "ppp0";
+			if (file_exists('/etc/sysconfig/network-scripts/ifcfg-ppp0'))
+				$default = 'ppp0';
 			else
-				$default = "eth0";
+				$default = 'eth0';
 		} else if ($role == Firewall::CONSTANT_DMZ) {
 			$key = Firewall::CONSTANT_DMZ;
-			$default = "";
+			$default = '';
 		} else
 			throw new ValidationException("$role - " . LOCALE_LANG_ERRMSG_SYNTAX_ERROR);
 
 		try {
 			$file = new File(Firewall::FILE_CONFIG);
-			$role = $file->LookupValue("/^$key=/");
+			$role = $file->lookup_value("/^$key=/");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
-		$role = preg_replace("/\"/", "", $role);
-		$role = preg_replace("/\s.*/", "", $role); // Only the first listed
+		$role = preg_replace('/"/', '', $role);
+		$role = preg_replace('/\s.*/', '', $role); // Only the first listed
 
 		if ($role) return $role;
 
@@ -335,58 +323,58 @@ class Firewall extends Daemon
 	 *  Firewall::CONSTANT_DMZ
 	 *
 	 * Example:
-	 *  GetInterfaceRole("eth0")
+	 *  get_interface_role("eth0")
 	 *  returns Firewall::CONSTANT_LAN in most cases -- since this is the default.
 	 *
 	 * @param string device	Interface name
 	 * @return string interface Interface role
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	public function GetInterfaceRole($device)
+	public function get_interface_role($device)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
-		if (strpos($device, ":") === false)
+		if (strpos($device, ':') === FALSE)
 			$ifname = $device;
 		else
-			list($ifname, $unit) = split(":", $device, 5);
+			list($ifname, $unit) = split(':', $device, 5);
 
 		$key = Firewall::CONSTANT_DMZ;
 
 		try {
 			$file = new File(Firewall::FILE_CONFIG);
-			$iface = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$iface = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
-		$iface = preg_replace("/\"/", "", $iface);
+		$iface = preg_replace('/"/', '', $iface);
 		if (preg_match("/$ifname/", $iface)) return $key;
 
 		$key = Firewall::CONSTANT_EXTERNAL;
 
 		try {
-			$iface = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$iface = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e ) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
-		$iface = preg_replace("/\"/", "", $iface);
+		$iface = preg_replace('/"/', '', $iface);
 		if (preg_match("/$ifname/", $iface)) return $key;
 
 		$key = Firewall::CONSTANT_HOT_LAN;
 
 		try {
-			$iface = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$iface = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e ) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
-		$iface = preg_replace("/\"/", "", $iface);
+		$iface = preg_replace('/"/', '', $iface);
 		if (preg_match("/$ifname/", $iface)) return $key;
 
 		return Firewall::CONSTANT_LAN;
@@ -395,17 +383,17 @@ class Firewall extends Daemon
 	/**
 	 * Returns network interface role in text.
 	 *
-	 * @see GetInterfaceRole
+	 * @see get_interface_role
 	 * @param string $device interface name
 	 * @return string interface role
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	public function GetInterfaceRoleText($device)
+	public function get_interface_role_text($device)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
-		$role = $this->GetInterfaceRole($device);
+		$role = $this->get_interface_role($device);
 
 		if ($role == Firewall::CONSTANT_LAN) {
 			return FIREWALL_LANG_LAN;
@@ -427,25 +415,25 @@ class Firewall extends Daemon
 	 * @param string device Interface name
 	 * @param string role Interface role
 	 * @return void
-	 * @throws EngineException, FirewallUndefinedRoleException
+	 * @throws Engine_Exception, Firewall_Undefined_Role_Exception
 	 */
 
-	public function SetInterfaceRole($device, $role)
+	public function set_interfaceRole($device, $role)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		if ($role != Firewall::CONSTANT_LAN) {
 			try {
-				$value = $file->LookupValue("/^" . Firewall::CONSTANT_LAN . "=/");
-			} catch (FileNoMatchException $e) {
-				throw new FirewallUndefinedRoleException(Firewall::CONSTANT_LAN, COMMON_WARNING);
+				$value = $file->lookup_value('/^' . Firewall::CONSTANT_LAN . '=/');
+			} catch (File_No_Match_Exception $e) {
+				throw new Firewall_Undefined_Role_Exception(Firewall::CONSTANT_LAN, CLEAROS_WARNING);
 			}
 
-			$value = preg_replace("/\"/", "", $value);
-			$list = explode(" ", $value);
-			$value = "";
+			$value = preg_replace('/"/', '', $value);
+			$list = explode(' ', $value);
+			$value = '';
 
 			foreach ($list as $iface) {
 				if ($iface != $device) $value .= "$iface ";
@@ -454,22 +442,23 @@ class Firewall extends Daemon
 			$value = rtrim($value);
 
 			try {
-				$file->ReplaceLines("/^" . Firewall::CONSTANT_LAN . "=/i", Firewall::CONSTANT_LAN . "=\"$value\"\n");
+				$file->replace_lines('/^' . Firewall::CONSTANT_LAN . '=/i',
+                    Firewall::CONSTANT_LAN . "=\"$value\"\n");
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 		}
 
 		if ($role != Firewall::CONSTANT_HOT_LAN) {
 			try {
-				$value = $file->LookupValue("/^" . Firewall::CONSTANT_HOT_LAN . "=/");
-			} catch (FileNoMatchException $e) {
-				// throw new FirewallUndefinedRoleException(Firewall::CONSTANT_HOT_LAN, COMMON_WARNING);
+				$value = $file->lookup_value('/^' . Firewall::CONSTANT_HOT_LAN . '=/');
+			} catch (File_No_Match_Exception $e) {
+				// throw new Firewall_Undefined_Role_Exception(Firewall::CONSTANT_HOT_LAN, CLEAROS_WARNING);
 			}
 
-			$value = preg_replace("/\"/", "", $value);
-			$list = explode(" ", $value);
-			$value = "";
+			$value = preg_replace('/"/', '', $value);
+			$list = explode(' ', $value);
+			$value = '';
 
 			foreach ($list as $iface) {
 				if ($iface != $device) $value .= "$iface ";
@@ -478,22 +467,22 @@ class Firewall extends Daemon
 			$value = rtrim($value);
 
 			try {
-				$file->ReplaceLines("/^" . Firewall::CONSTANT_HOT_LAN . "=/i", Firewall::CONSTANT_HOT_LAN . "=\"$value\"\n");
+				$file->replace_lines('/^' . Firewall::CONSTANT_HOT_LAN . '=/i', Firewall::CONSTANT_HOT_LAN . "=\"$value\"\n");
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 		}
 
 		if ($role != Firewall::CONSTANT_EXTERNAL) {
 			try {
-				$value = $file->LookupValue("/^" . Firewall::CONSTANT_EXTERNAL . "=/");
-			} catch (FileNoMatchException $e) {
-				throw new FirewallUndefinedRoleException(Firewall::CONSTANT_EXTERNAL, COMMON_WARNING);
+				$value = $file->lookup_value('/^' . Firewall::CONSTANT_EXTERNAL . '=/');
+			} catch (File_No_Match_Exception $e) {
+				throw new Firewall_Undefined_Role_Exception(Firewall::CONSTANT_EXTERNAL, CLEAROS_WARNING);
 			}
 
-			$value = preg_replace("/\"/", "", $value);
-			$list = explode(" ", $value);
-			$value = "";
+			$value = preg_replace('/"/', '', $value);
+			$list = explode(' ', $value);
+			$value = '';
 
 			foreach ($list as $iface) {
 				if ($iface != $device) $value .= "$iface ";
@@ -502,22 +491,22 @@ class Firewall extends Daemon
 			$value = rtrim($value);
 
 			try {
-				$file->ReplaceLines("/^" . Firewall::CONSTANT_EXTERNAL . "=/i", Firewall::CONSTANT_EXTERNAL . "=\"$value\"\n");
+				$file->replace_lines('/^' . Firewall::CONSTANT_EXTERNAL . '=/i', Firewall::CONSTANT_EXTERNAL . "=\"$value\"\n");
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 		}
 
 		if ($role != Firewall::CONSTANT_DMZ) {
 			try {
-				$value = $file->LookupValue("/^" . Firewall::CONSTANT_DMZ . "=/");
-			} catch (FileNoMatchException $e) {
-				throw new FirewallUndefinedRoleException(Firewall::CONSTANT_DMZ, COMMON_WARNING);
+				$value = $file->lookup_value('/^' . Firewall::CONSTANT_DMZ . '=/');
+			} catch (File_No_Match_Exception $e) {
+				throw new Firewall_Undefined_Role_Exception(Firewall::CONSTANT_DMZ, CLEAROS_WARNING);
 			}
 
-			$value = preg_replace("/\"/", "", $value);
-			$list = explode(" ", $value);
-			$value = "";
+			$value = preg_replace('/"/', '', $value);
+			$list = explode(' ', $value);
+			$value = '';
 
 			foreach ($list as $iface)
 				if ($iface != $device) $value .= "$iface ";
@@ -525,37 +514,38 @@ class Firewall extends Daemon
 			$value = rtrim($value);
 
 			try {
-				$file->ReplaceLines("/^" . Firewall::CONSTANT_DMZ . "=/i", Firewall::CONSTANT_DMZ . "=\"$value\"\n");
+				$file->replace_lines('/^' . Firewall::CONSTANT_DMZ . '=/i',
+                    Firewall::CONSTANT_DMZ . "=\"$value\"\n");
 			} catch(Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 		}
 
 		try {
-			$value = $file->LookupValue("/^$role=/");
-		} catch (FileNoMatchException $e) {
-			$value = "";
+			$value = $file->lookup_value("/^$role=/");
+		} catch (File_No_Match_Exception $e) {
+			$value = '';
 
 			try {
-				$file->AddLinesAfter("$role=\n", "/^LANIF/");
+				$file->add_lines_after("$role=\n", '/^LANIF/');
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
-		$value = preg_replace("/\"/", "", $value);
-		$allifs = preg_split("/\s+/", $value);
+		$value = preg_replace('/"/', '', $value);
+		$allifs = preg_split('/\s+/', $value);
 		$allifs[] = $device;
 		sort($allifs);
 		$value = implode(" ", array_unique($allifs));
 		$value = ltrim($value);
 
 		try {
-			$file->ReplaceLines("/^$role=/i", "$role=\"$value\"\n");
-		} catch(EngineException $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			$file->replace_lines("/^$role=/i", "$role=\"$value\"\n");
+		} catch(Engine_Exception $e) {
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -565,12 +555,12 @@ class Firewall extends Daemon
 	 *
 	 * @param string device Interface name
 	 * @return void
-	 * @throws EngineException, FirewallUndefinedRoleException
+	 * @throws Engine_Exception, Firewall_Undefined_Role_Exception
 	 */
 
-	public function RemoveInterfaceRole($device)
+	public function remote_interface_role($device)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$remove[] = $device;
 		$file = new File(Firewall::FILE_CONFIG);
@@ -592,18 +582,18 @@ class Firewall extends Daemon
 			}
 
 			try {
-				$value = $file->LookupValue("/^$role=/");
-			} catch (FileNoMatchException $e) {
-				throw new FirewallUndefinedRoleException($role, COMMON_WARNING);
+				$value = $file->lookup_value("/^$role=/");
+			} catch (File_No_Match_Exception $e) {
+				throw new Firewall_Undefined_Role_Exception($role, CLEAROS_WARNING);
 			}
 
-			$value = trim(preg_replace("/\"/", "", $value));
-			$value = implode(" ", array_diff(explode(" ", $value), $remove));
+			$value = trim(preg_replace("/\"/", '', $value));
+			$value = implode(' ', array_diff(explode(' ', $value), $remove));
 
 			try {
-				$file->ReplaceLines("/^$role=/i", "$role=\"$value\"\n");
+				$file->replace_lines("/^$role=/i", "$role=\"$value\"\n");
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 		}
 	}
@@ -611,38 +601,41 @@ class Firewall extends Daemon
 	/**
 	 * Get array of firewall rules.
 	 *
-	 * @return array rules FirewallRule objects
-	 * @throws EngineException
+	 * @return array rules Firewall_Rule objects
+	 * @throws Engine_Exception
 	 */
 
-	public function GetRules()
+	public function get_rules()
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$rules = array();
 
 		try {
 			$file = new File(Firewall::FILE_CONFIG);
-			$conf = $file->GetContents();
+			$conf = $file->get_contents();
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		$parts = array();
 		
-		if (eregi("RULES=\"([A-Z0-9|/_:.\\[:space:]-]*)\"", $conf, $parts) && strlen($parts[1])) {
-			$value = trim(str_replace(array("\n", "\\", "\t"), " ", $parts[1]));
-			while(strstr($value, "  ")) $value = str_replace("  ", " ", $value);
+		if (eregi("RULES=\"([A-Z0-9|/_:.\\[:space:]-]*)\"", $conf, $parts)
+            && strlen($parts[1])) {
+			$value = trim(
+                str_replace(array("\n", "\\", "\t"), ' ', $parts[1]));
+			while(strstr($value, '  '))
+                $value = str_replace('  ', ' ', $value);
 
 			if(!strlen($value)) return $rules;
 
-			foreach(explode(" ", $value) as $rule)
+			foreach(explode(' ', $value) as $rule)
 			{
-				$fwr = new FirewallRule();
+				$fwr = new Firewall_Rule();
 
 				try {
-					$fwr->SetRule($rule);
-				} catch (FirewallInvalidRuleException $e) {
+					$fwr->set_rule($rule);
+				} catch (Firewall_Invalid_Rule_Exception $e) {
 					continue;
 				}
 
@@ -656,25 +649,25 @@ class Firewall extends Daemon
 	/**
 	 * Set firewall rules from array.
 	 *
-	 * @param array rules Array of FirewallRule objects
+	 * @param array rules Array of Firewall_Rule objects
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	public function SetRules($rules)
+	public function set_rules($rules)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
-		$buffer = "";
+		$buffer = '';
 		sort($rules);
 
 		foreach ($rules as $rule) {
-			$value = "";
+			$value = '';
 
 			try {
-				$value = $rule->GetRule();
+				$value = $rule->get_rule();
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 
 			$buffer .= sprintf("\t%s \\\n", $value);
@@ -684,43 +677,43 @@ class Firewall extends Daemon
 		$fw_conf = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$contents = $fw_conf->GetContents();
+			$contents = $fw_conf->get_contents();
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if (($conf = eregi_replace("RULES=\"[A-Z0-9|/_:.\\[:space:]-]*\"",
 			"RULES=\"\\\n$buffer\"", $contents))) {
 
-			$temp = new File("firewall", false, true);
+			$temp = new File("firewall", FALSE, TRUE);
 
 			try {
-				$temp->AddLines("$conf\n");
+				$temp->add_lines("$conf\n");
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 
-			$fw_conf->Replace($temp->GetFilename());
+			$fw_conf->Replace($temp->get_filename());
 		} else {
-			throw new EngineException("Invalid firewall configuration", COMMON_WARNING);
+			throw new Engine_Exception("Invalid firewall configuration", CLEAROS_WARNING);
 		}
 	}
 
 	/**
 	 * Find firewall rule.
 	 *
-	 * @param object val FirewallRule object to search for
+	 * @param object val Firewall_Rule object to search for
 	 * @return object Matching rule
 	 */
 
-	public function FindRule($val)
+	public function find_rule($val)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
-		$rules = $this->GetRules();
+		$rules = $this->get_rules();
 
 		foreach ($rules as $rule)
-			if ($val->IsEqual($rule)) return $rule;
+			if ($val->is_equal($rule)) return $rule;
 
 		return null;
 	}
@@ -728,76 +721,76 @@ class Firewall extends Daemon
 	/**
 	 * Add firewall rule.
 	 *
-	 * @param object val FirewallRule object to add
+	 * @param object val Firewall_Rule object to add
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	public function AddRule($val)
+	public function add_rule($val)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		try {
-			$val->GetRule();
-			$rules = $this->GetRules();
+			$val->get_rule();
+			$rules = $this->get_rules();
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		foreach($rules as $rule)
 		{
-			if ($val->IsEqual($rule))
-				throw new EngineException(FIREWALL_LANG_ERRMSG_RULE_EXISTS, COMMON_WARNING);
+			if ($val->is_equal($rule))
+				throw new Engine_Exception(FIREWALL_LANG_ERRMSG_RULE_EXISTS, CLEAROS_WARNING);
 		}
 
 		$rules[] = $val;
 
 		try {
-			$this->SetRules($rules);
+			$this->set_rules($rules);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
 	/**
 	 * Delete firewall rule.
 	 *
-	 * @param object val FirewallRule object to delete
+	 * @param object val Firewall_Rule object to delete
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	public function DeleteRule($val)
+	public function delete_rule($val)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		try {
-			$val->GetRule();
-			$old_rules = $this->GetRules();
+			$val->get_rule();
+			$old_rules = $this->get_rules();
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
-		$exists = false;
+		$exists = FALSE;
 		$new_rules = array();
 
 		foreach ($old_rules as $rule) {
-			if (!$val->IsEqual($rule)) {
+			if (!$val->is_equal($rule)) {
 				$new_rules[] = $rule;
 				continue;
 			}
 
-			$exists = true;
+			$exists = TRUE;
 		}
 
 		if(!$exists) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_RULE_NOT_FOUND, COMMON_WARNING);
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_RULE_NOT_FOUND, CLEAROS_WARNING);
 		}
 
 		try {
-			$this->SetRules($new_rules);
+			$this->set_rules($new_rules);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -811,34 +804,34 @@ class Firewall extends Daemon
 	 * @param string mac MAC address
 	 * @param string key key for the list
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function AddMac($mac, $key)
+	protected function add_mac($mac, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
-		if (! $this->IsValidMac($mac)) {
-			throw new EngineException("MAC - " . LOCALE_LANG_INVALID .
-				" (AA:BB:CC:DD:EE:FF)", COMMON_WARNING);
+		if (! Network_Utils::is_valid_mac($mac)) {
+			throw new Engine_Exception("MAC - " . LOCALE_LANG_INVALID .
+				" (AA:BB:CC:DD:EE:FF)", CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$maclist = $this->GetMacs($key);
+			$maclist = $this->get_macs($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($maclist) {
 			foreach ($maclist as $macitem) {
 				if ($macitem == $mac) {
-					throw new EngineException(FIREWALL_LANG_ERRMSG_RULE_EXISTS, COMMON_WARNING);
+					throw new Engine_Exception(FIREWALL_LANG_ERRMSG_RULE_EXISTS, CLEAROS_WARNING);
 				}
 				$thelist .= $macitem . " ";
 			}
@@ -851,19 +844,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -873,36 +866,36 @@ class Firewall extends Daemon
 	 * @param string host domain name, IP, or network address
 	 * @param string key key for the list
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function AddHost($host, $key)
+	protected function add_host($host, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
 		if (! $host) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_HOST_INVALID, COMMON_WARNING);
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_HOST_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$hostlist = $this->GetHosts($key);
-		} catch (FileNoMatchException $e) {
+			$hostlist = $this->get_hosts($key);
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($hostlist) {
 			foreach ($hostlist as $hostinfo) {
 				if ($hostinfo[host] == $host) {
-					throw new EngineException(FIREWALL_LANG_ERRMSG_RULE_EXISTS, COMMON_WARNING);
+					throw new Engine_Exception(FIREWALL_LANG_ERRMSG_RULE_EXISTS, CLEAROS_WARNING);
 				}
-				$thelist .= $hostinfo[host] . " ";
+				$thelist .= $hostinfo[host] . ' ';
 			}
 		}
 
@@ -914,19 +907,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -937,39 +930,39 @@ class Firewall extends Daemon
 	 * @param string port service name, port number
 	 * @param string key key for the list
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function AddPort($protocol, $port, $key)
+	protected function add_port($protocol, $port, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
-		if (! $this->IsValidProtocol($protocol)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_protocol($protocol)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, CLEAROS_WARNING);
 		}
 
-		if (! $this->IsValidPort($port)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PORT_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_port($port)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PORT_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$portlist = $this->GetPorts($key);
+			$portlist = $this->get_ports($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($portlist) {
 			foreach ($portlist as $portinfo) {
 				if (($portinfo[protocol] == $protocol) && ($portinfo[port] == $port)) {
-					throw new EngineException(FIREWALL_LANG_ERRMSG_RULE_EXISTS, COMMON_WARNING);
+					throw new Engine_Exception(FIREWALL_LANG_ERRMSG_RULE_EXISTS, CLEAROS_WARNING);
 				}
-				$thelist .= $portinfo[protocol] . "|" . $portinfo[port] . " ";
+				$thelist .= $portinfo[protocol] . '|' . $portinfo[port] . ' ';
 			}
 		}
 		$thelist .= "$protocol|$port";
@@ -980,19 +973,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1004,37 +997,37 @@ class Firewall extends Daemon
 	 * @param string to to service name, port number
 	 * @param string key key for the list
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function AddPortRange($protocol, $from, $to, $key)
+	protected function add_portRange($protocol, $from, $to, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
-		if (! $this->IsValidProtocol($protocol)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_protocol($protocol)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, CLEAROS_WARNING);
 		}
 
-		if (! $this->IsValidPortRange($from, $to)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PORT_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_port_range($from, $to)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PORT_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$portlist = $this->GetPortRanges($key);
+			$portlist = $this->get_port_ranges($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($portlist) {
 			foreach ($portlist as $portinfo) {
 				if (($portinfo[protocol] == $protocol) && ($portinfo[from] == $from) && ($portinfo[to] == $to)) {
-					throw new EngineException(FIREWALL_LANG_ERRMSG_RULE_EXISTS, COMMON_WARNING);
+					throw new Engine_Exception(FIREWALL_LANG_ERRMSG_RULE_EXISTS, CLEAROS_WARNING);
 				}
 				$thelist .= $portinfo[protocol] . "|" . $portinfo[from] . ":" . $portinfo[to] . " ";
 			}
@@ -1047,19 +1040,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1069,20 +1062,20 @@ class Firewall extends Daemon
 	 * @param string service service name eg HTTP, FTP, SMTP
 	 * @param string key key for the list
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function AddStandardService($service, $key)
+	protected function add_standard_service($service, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		global $PORTS;
 
 		// Validate
 		//---------
 
-		if (! $this->IsValidService($service)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_SERVICE_INVALID, COMMON_WARNING);
+		if (! $this->is_valid_service($service)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_SERVICE_INVALID, CLEAROS_WARNING);
 		}
 
 		$myports = $PORTS;
@@ -1091,12 +1084,12 @@ class Firewall extends Daemon
 
 				if ($portinfo[0] == Firewall::CONSTANT_NORMAL) {
 					try {
-						$this->AddPort($portinfo[1], $portinfo[2], $key);
+						$this->add_port($portinfo[1], $portinfo[2], $key);
 					} catch (Exception $e) {
-						throw new EngineException($e->getMessage(), COMMON_WARNING);
+						throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 					}	
 				} else {
-					throw new EngineException(LOCALE_LANG_ERRMSG_PARSE_ERROR, COMMON_WARNING);
+					throw new Engine_Exception(LOCALE_LANG_ERRMSG_PARSE_ERROR, CLEAROS_WARNING);
 				}
 			}
 		}
@@ -1107,33 +1100,33 @@ class Firewall extends Daemon
 	 *
 	 * @param string host host, IP or network
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function DeleteHost($host, $key)
+	protected function delete_host($host, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
 		if (! $host) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_HOST_INVALID, COMMON_WARNING);
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_HOST_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$hostlist = $this->GetHosts($key);
+			$hostlist = $this->get_hosts($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($hostlist) {
 			foreach ($hostlist as $hostinfo) {
 				if ($hostinfo[host] == $host) continue;
-				$thelist .= "$hostinfo[host] ";
+				$thelist .= $hostinfo[host] . ' ';
 			}
 
 			// Get rid of the last space added above
@@ -1146,19 +1139,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$match = $file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$match = $file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1167,27 +1160,27 @@ class Firewall extends Daemon
 	 *
 	 * @param string mac MAC address
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function DeleteMac($mac, $key)
+	protected function delete_mac($mac, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
 		if (! $mac) {
-			throw new EngineException("MAC - " . LOCALE_LANG_INVALID, COMMON_WARNING);
+			throw new Engine_Exception('MAC - ' . LOCALE_LANG_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$maclist = $this->GetMacs($key);
+			$maclist = $this->get_macs($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($maclist) {
@@ -1206,19 +1199,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1228,38 +1221,38 @@ class Firewall extends Daemon
 	 * @param string protocol the protocol - UDP/TCP
 	 * @param string port service name, port number
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function DeletePort($protocol, $port, $key)
+	protected function delete_port($protocol, $port, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
-		if (! $this->IsValidProtocol($protocol)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_protocol($protocol)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, CLEAROS_WARNING);
 		}
 
-		if (! $this->IsValidPort($port)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PORT_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_port($port)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PORT_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$portlist = $this->GetPorts($key);
+			$portlist = $this->get_ports($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($portlist) {
 			foreach ($portlist as $portinfo) {
 				if (($portinfo[protocol] == $protocol) && ($portinfo[port] == $port))
 					continue;
-				$thelist .= $portinfo[protocol] . "|" . $portinfo[port] . " ";
+				$thelist .= $portinfo[protocol] . '|' . $portinfo[port] . ' ';
 			}
 
 			// Get rid of the last space added above
@@ -1272,19 +1265,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1295,38 +1288,38 @@ class Firewall extends Daemon
 	 * @param string port service name, port number
 	 * @param string key key for the list
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function DeletePortRange($protocol, $from, $to, $key)
+	protected function delete_port_range($protocol, $from, $to, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
-		if (! $this->IsValidProtocol($protocol)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_protocol($protocol)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PROTOCOL_INVALID, CLEAROS_WARNING);
 		}
 
-		if (! $this->IsValidPortRange($from, $to)) {
-			throw new EngineException(FIREWALL_LANG_ERRMSG_PORT_INVALID, COMMON_WARNING);
+		if (! Network_Utils::is_valid_port_range($from, $to)) {
+			throw new Engine_Exception(FIREWALL_LANG_ERRMSG_PORT_INVALID, CLEAROS_WARNING);
 		}
 
 		// Grab the current list (if any)
 		//-------------------------------
 
 		try {
-			$portlist = $this->GetPortRanges($key);
+			$portlist = $this->get_port_ranges($key);
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		if ($portlist) {
 			foreach ($portlist as $portinfo) {
 				if (($portinfo[protocol] == $protocol) && ($portinfo[from] == $from) && ($portinfo[to] == $to))
 					continue;
-				$thelist .= $portinfo[protocol] . "|" . $portinfo[from] . ":" . $portinfo[to] . " ";
+				$thelist .= $portinfo[protocol] . '|' . $portinfo[from] . ':' . $portinfo[to] . ' ';
 			}
 
 			// Get rid of the last space added above
@@ -1339,19 +1332,19 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/i", "$key=\"$thelist\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/i", "$key=\"$thelist\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If key does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLines("$key=\"$thelist\"\n");
+			$file->add_lines("$key=\"$thelist\"\n");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1360,27 +1353,27 @@ class Firewall extends Daemon
 	 *
 	 * @param string key key for the list
 	 * @return array list of hosts
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function GetHosts($key)
+	protected function get_hosts($key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$rawline = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$rawline = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 			return null;
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// - Get rid of quotes
 		// - Make multiple spaces one single space
-		$rawline = preg_replace("/\"/", "", $rawline);
-		$rawline = preg_replace("/ +/", " ", $rawline);
+		$rawline = preg_replace('/"/', '', $rawline);
+		$rawline = preg_replace('/ +/', ' ', $rawline);
 
 		if (!$rawline) return null;
 
@@ -1388,13 +1381,13 @@ class Firewall extends Daemon
 		$hostinfo = array();
 		$itemlist = array();
 
-		$itemlist = explode(" ", $rawline);
+		$itemlist = explode(' ', $rawline);
 		foreach ($itemlist as $host) {
 			$hostinfo[host] = $host;
 			try {
-				$hostinfo[metainfo] = $this->LookupHostMetainfo($host);
+				$hostinfo[metainfo] = $this->lookup_host_metainfo($host);
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 			$hostlist[] = $hostinfo;
 		}
@@ -1407,31 +1400,31 @@ class Firewall extends Daemon
 	 *
 	 * @param string key key for the list
 	 * @return array list of MACs
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function GetMacs($key)
+	protected function get_macs($key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$rawline = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$rawline = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 			return null;
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// - Get rid of quotes
 		// - Make multiple spaces one single space
-		$rawline = preg_replace("/\"/", "", $rawline);
-		$rawline = preg_replace("/ +/", " ", $rawline);
+		$rawline = preg_replace('/"/', '', $rawline);
+		$rawline = preg_replace('/ +/', ' ', $rawline);
 
 		if (!$rawline) return null;
 
-		$maclist = explode(" ", $rawline);
+		$maclist = explode(' ', $rawline);
 
 		return $maclist;
 	}
@@ -1448,24 +1441,24 @@ class Firewall extends Daemon
 	 * @return array allowed incoming port ranges
 	 */
 
-	protected function GetPortRanges($key)
+	protected function get_port_ranges($key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$rawline = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$rawline = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 			return null;
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// - Get rid of quotes
 		// - Make multiple spaces one single space
-		$rawline = preg_replace("/\"/", "", $rawline);
-		$rawline = preg_replace("/ +/", " ", $rawline);
+		$rawline = preg_replace('/"/', '', $rawline);
+		$rawline = preg_replace('/ +/', ' ', $rawline);
 
 		if (!$rawline) return;
 
@@ -1473,11 +1466,11 @@ class Firewall extends Daemon
 		$portinfo = array();
 		$itemlist = array();
 
-		$itemlist = explode(" ", $rawline);
+		$itemlist = explode(' ', $rawline);
 		foreach ($itemlist as $item) {
 			$details = explode("|", $item);
 			$portinfo[protocol] = $details[0];
-			$tofrom = explode(":", $details[1]);
+			$tofrom = explode(':', $details[1]);
 			$portinfo[from] = $tofrom[0];
 			$portinfo[to] = $tofrom[1];
 			$portlist[] = $portinfo;
@@ -1498,24 +1491,24 @@ class Firewall extends Daemon
 	 * @return array allowed incoming ports
 	 */
 
-	protected function GetPorts($key)
+	protected function get_ports($key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$rawline = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$rawline = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 			return null;
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// - Get rid of quotes
 		// - Make multiple spaces one single space
-		$rawline = preg_replace("/\"/", "", $rawline);
-		$rawline = preg_replace("/ +/", " ", $rawline);
+		$rawline = preg_replace('/"/', '', $rawline);
+		$rawline = preg_replace('/ +/', ' ', $rawline);
 
 		if (!$rawline) return;
 
@@ -1523,16 +1516,17 @@ class Firewall extends Daemon
 		$portinfo = array();
 		$itemlist = array();
 
-		$itemlist = explode(" ", $rawline);
+		$itemlist = explode(' ', $rawline);
 		foreach ($itemlist as $item) {
-			$details = explode("|", $item);
+			$details = explode('|', $item);
 			$portinfo[protocol] = $details[0];
 			$portinfo[port] = $details[1];
 
 			try {
-				$portinfo[service] = $this->LookupService($portinfo[protocol], $portinfo[port]);
+				$portinfo[service] = $this->LookupService(
+                    $portinfo[protocol], $portinfo[port]);
 			} catch (Exception $e) {
-				throw new EngineException($e->getMessage(), COMMON_WARNING);
+				throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 			}
 
 			$portlist[] = $portinfo;
@@ -1546,30 +1540,30 @@ class Firewall extends Daemon
 	 *
 	 * @param string key key for the list
 	 * @return boolean state of the key
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function GetState($key)
+	protected function get_state($key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$retval = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
-			return false;
+			$retval = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
+			return FALSE;
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		$retval = preg_replace("/\"/", "", $retval);
 
 		if (!$retval || ($retval == Firewall::CONSTANT_OFF)) {
-			return false;
-		} else if ($retval == Firewall::CONSTANT_ON) return true;
+			return FALSE;
+		} else if ($retval == Firewall::CONSTANT_ON) return TRUE;
 
-		return false;
+		return FALSE;
 	}
 
 	/**
@@ -1577,21 +1571,21 @@ class Firewall extends Daemon
 	 *
 	 * @param string key key for the list
 	 * @return string value of the key
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function GetValue($key)
+	protected function get_value($key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$retval = $file->LookupValue("/^$key=/");
-		} catch (FileNoMatchException $e) {
+			$retval = $file->lookup_value("/^$key=/");
+		} catch (File_No_Match_Exception $e) {
 			return null;
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		$retval = preg_replace("/\"/", "", $retval);
@@ -1601,35 +1595,17 @@ class Firewall extends Daemon
 	}
 
 	/**
-	 * Generic set firewall mode.
-	 *
-	 * @param string mode Firewall mode
-	 * @return void
-	 * @throws EngineException
-	 */
-
-	public function SetMode($mode)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		if (! $this->IsValidMode($mode))
-			throw new EngineException(FIREWALL_LANG_MODE . " - " . LOCALE_LANG_INVALID, COMMON_WARNING);
-
-		$this->SetValue($mode, "MODE");
-	}
-
-	/**
 	 * Generic set state for a on/off key.
 	 *
 	 * @param string $interface interface device name
 	 * @param string $key value of the key
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function SetInterface($interface, $key)
+	protected function set_interface($interface, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
@@ -1642,39 +1618,39 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$file->ReplaceLines("/^$key=/", "$key=\"$interface\"\n");
-		} catch (FileNoMatchException $e) {
+			$file->replace_lines("/^$key=/", "$key=\"$interface\"\n");
+		} catch (File_No_Match_Exception $e) {
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 
 		// If tag does not exist, add it
 		//------------------------------
 
 		try {
-			$file->AddLinesAfter("$key=\"$interface\"\n", "/^[^#]/");
+			$file->add_lines_after("$key=\"$interface\"\n", "/^[^#]/");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
 	/**
 	 * Generic set state for a on/off key.
 	 *
-	 * @param boolean $state state true or false
+	 * @param boolean $state state TRUE or FALSE
 	 * @param string $key key value of the key
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function SetState($state, $key)
+	protected function set_state($state, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Validate
 		//---------
 
 		if (! is_bool($state)) {
-			throw new EngineException(LOCALE_LANG_ERRMSG_INVALID_TYPE, COMMON_WARNING);
+			throw new Engine_Exception(LOCALE_LANG_ERRMSG_INVALID_TYPE, CLEAROS_WARNING);
 		}
 
 		// Update tag if it exists
@@ -1688,11 +1664,11 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$match = $file->ReplaceLines("/^$key=/", "$key=\"$flag\"\n");
+			$match = $file->replace_lines("/^$key=/", "$key=\"$flag\"\n");
 			if (! $match)
-				$file->AddLinesAfter("$key=\"$flag\"\n", "/^[^#]/");
+				$file->add_lines_after("$key=\"$flag\"\n", "/^[^#]/");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1702,12 +1678,12 @@ class Firewall extends Daemon
 	 * @param string $value value of the key
 	 * @param string $key key name
 	 * @return void
-	 * @throws EngineException
+	 * @throws Engine_Exception
 	 */
 
-	protected function SetValue($value, $key)
+	protected function set_value($value, $key)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		// Update tag if it exists
 		//------------------------
@@ -1715,11 +1691,11 @@ class Firewall extends Daemon
 		$file = new File(Firewall::FILE_CONFIG);
 
 		try {
-			$match = $file->ReplaceLines("/^$key=/", "$key=\"$value\"\n");
+			$match = $file->replace_lines("/^$key=/", "$key=\"$value\"\n");
 			if (! $match)
-				$file->AddLinesAfter("$key=\"$value\"\n", "/^[^#]/");
+				$file->add_lines_after("$key=\"$value\"\n", "/^[^#]/");
 		} catch (Exception $e) {
-			throw new EngineException($e->getMessage(), COMMON_WARNING);
+			throw new Engine_Exception($e->getMessage(), CLEAROS_WARNING);
 		}
 	}
 
@@ -1728,177 +1704,34 @@ class Firewall extends Daemon
 	///////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Validation routine for IPs
-	 *
-	 * @param string ip IP address
-	 * @return boolean true if IP address is valid
-	 */
-
-	public function IsValidIp($ip)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		$parts = explode(".", $ip);
-
-		if (sizeof($parts) != 4) return false;
-
-		foreach ($parts as $part) {
-			if (!is_numeric($part) || ($part > 255) || ($part < 0))
-				return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Validation routine for firewall mode.
-	 *
-	 * @param string mode Firewall mode
-	 * @return boolean true if mode is valid
-	 */
-
-	public function IsValidMode($mode)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		switch($mode) {
-		case Firewall::CONSTANT_GATEWAY:
-		case Firewall::CONSTANT_STANDALONE:
-		case Firewall::CONSTANT_TRUSTEDSTANDALONE:
-		case Firewall::CONSTANT_TRUSTEDGATEWAY:
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Validation routine for MACs
-	 *
-	 * @param string mac MAC address
-	 * @return boolean true if MAC address is valid
-	 */
-
-	public function IsValidMac($mac)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		// sample: 00:02:2D:53:2B:84
-		$parts = explode(":", $mac);
-
-		if (sizeof($parts) != 6) return false;
-
-		foreach ($parts as $part) {
-			if (strlen($part) != 2) return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Validation routine for integer port address
-	 *
-	 * @param int port Numeric port address
-	 * @return boolean true if port is valid
-	 */
-
-	public function IsValidPort($port)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		if (! preg_match("/^\d+$/", $port))
-			return false;
-
-		// TODO: DMZ uses 0 as a flag for "all"
-		if (($port > 65535) || ($port < 0))
-			return false;
-
-		return true;
-	}
-
-	/**
-	 * Validation routine for integer port range
-	 *
-	 * @param int from Low port address
-	 * @param int to High port address
-	 * @return boolean true if port range is valid
-	 */
-
-	public function IsValidPortRange($from, $to)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		if ((! preg_match("/^\d+$/", $from)) || (! preg_match("/^\d+$/", $to)))
-			return false;
-
-		if (($from > 65535) || ($from <= 0) || ($to > 65535) || ($to <= 0))
-			return false;
-
-		if ($from > $to)
-			return false;
-
-		return true;
-	}
-
-	/**
-	 * Validation routine for protocol (TCP, UDP, ALL)
-	 *
-	 * @param string protocol Protocol (TCP, UDP, or ALL)
-	 * @return boolean true if protocl is valid
-	 */
-
-	public function IsValidProtocol($protocol)
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		if (preg_match("/^(TCP|UDP|ALL)$/", $protocol)) 
-			return true;
-
-		return false;
-	}
-
-	/**
 	 * Validation routine for service.
 	 *
 	 * @param string service service eg HTTP
-	 * @return boolean true if service is valid
+	 * @return boolean TRUE if service is valid
 	 */
 
-	public function IsValidService($service)
+	public function is_valid_service($service)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
-		$servicelist = $this->GetStandardServiceList();
-		foreach ($servicelist as $item) {
-			if ($service == $item) return true;
-		}
-		return false;
+		$servicelist = $this->get_standard_service_list();
+		foreach ($servicelist as $item)
+			if ($service == $item) return TRUE;
+		return FALSE;
 	}
 
 	/**
 	 * Validation routine for IPSec Server
 	 *
-	 * @param boolean ipsecserver IPSec server toggle setting (true/false)
-	 * @return boolean true if ipsecserver is valid
+	 * @param boolean ipsecserver IPSec server toggle setting (TRUE/FALSE)
+	 * @return boolean TRUE if ipsecserver is valid
 	 */
 
-	public function IsValidServer($ipsecserver)
+	public function is_valid_server($ipsecserver)
 	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
+		clearos_profile(__METHOD__, __LINE__);
 
 		return (is_bool($ipsecserver));
 	}
 
-	/**
-	 * @ignore
-	 */
-
-	public function __destruct()
-	{
-		ClearOsLogger::Profile(__METHOD__, __LINE__);
-
-		parent::__destruct();
-	}
 }
-
-// vi: ts=4
