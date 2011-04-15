@@ -397,15 +397,15 @@ class Firewall extends Daemon
 		$role = $this->get_interface_role($device);
 
 		if ($role == Firewall::CONSTANT_LAN) {
-			return FIREWALL_LANG_LAN;
+			return lang('firewall_lan');
 		} else if ($role == Firewall::CONSTANT_EXTERNAL) {
-			return FIREWALL_LANG_EXTERNAL;
+			return lang('firewall_external');
 		} else if ($role == Firewall::CONSTANT_DMZ) {
-			return FIREWALL_LANG_MODE_DMZ;
+			return lang('firewall_dmz');
 		} else if ($role == Firewall::CONSTANT_HOT_LAN) {
-			return FIREWALL_LANG_HOT_LAN;
+			return lang('firewall_hot_lan');
 		} else {
-			return FIREWALL_LANG_LAN;
+			return lang('firewall_lan');
 		}
 	}
 
