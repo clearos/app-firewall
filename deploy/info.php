@@ -20,15 +20,22 @@ $app['description'] = 'Firewall description... blah blah';
 
 $app['name'] = lang('firewall_configuration');
 $app['category'] = lang('base_category_network');
-$app['subcategory'] = lang('base_subcategory_settings');
+$app['subcategory'] = lang('base_subcategory_firewall');
 
 /////////////////////////////////////////////////////////////////////////////
 // Packaging
 /////////////////////////////////////////////////////////////////////////////
 
-$app['core_dependencies'] = array(
+$app['requires'] = array(
+    'app-network',
 );
 
+$app['core_requires'] = array(
+    'app-network-core',
+    'iptables',
+);
+
+/*
 $app['core_file_manifest'] = array(
    'firewall-up' => array(
         'target' => '/usr/sbin/firewall-up',
@@ -36,6 +43,7 @@ $app['core_file_manifest'] = array(
         'onwer' => 'root',
         'group' => 'root',
     ),
+
    'firewall' => array(
         'target' => '/etc/firewall',
         'mode' => '0644',
@@ -45,3 +53,4 @@ $app['core_file_manifest'] = array(
         'config_params' => 'noreplace',
     ),
 );
+*/
