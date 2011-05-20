@@ -1,0 +1,32 @@
+#!/bin/sh
+
+#=============================================================================
+#
+# This script runs when a PPP interface comes up.
+#
+# We don't want to restart the firewall when a PPTP VPN user appears!
+# So... we have to do some automagic to detect whether this is the external 
+# PPPoE connection.
+#
+#=============================================================================
+
+logger -p local6.notice -t firewall "detected new connection on $1"
+
+TYPE=`echo $1 | sed 's/[0-9].*//'`
+
+if [ -e "/etc/sysconfig/network-scripts/ifcfg-$1" ]; then
+	logger -p local6.notice -t firewall "detected connection type - PPPoE DSL"
+	/etc/rc.d/init.d/firewall restart
+	/usr/sbin/dnsupdate
+elif [ "$TYPE" == "pptp" ]; then
+	if [ -e /etc/firewall ]; then
+		. /etc/firewall
+	fi
+	if ( [ "$MULTIPATH" == "on" ] || [ "$MULTIPATH" == "yes" ] ); then
+		logger -p local6.notice -t firewall "detected connection type - PPTP VPN on multi-WAN"
+		/etc/rc.d/init.d/firewall restart
+	else
+		logger -p local6.notice -t firewall "detected connection type - PPTP VPN"
+	fi
+	/sbin/ifconfig $1 mtu 1500
+fi

@@ -35,7 +35,6 @@ $app['core_requires'] = array(
     'iptables',
 );
 
-/*
 $app['core_file_manifest'] = array(
    'firewall-up' => array(
         'target' => '/usr/sbin/firewall-up',
@@ -43,14 +42,5 @@ $app['core_file_manifest'] = array(
         'onwer' => 'root',
         'group' => 'root',
     ),
-
-   'firewall' => array(
-        'target' => '/etc/firewall',
-        'mode' => '0644',
-        'onwer' => 'root',
-        'group' => 'root',
-        'config' => TRUE,
-        'config_params' => 'noreplace',
-    ),
 );
-*/
+

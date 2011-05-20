@@ -37,6 +37,7 @@ This package provides the core API and libraries.
 mkdir -p -m 755 %{buildroot}/usr/clearos/apps/firewall
 cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
+install -D -m 0755 packaging/firewall-up %{buildroot}/usr/sbin/firewall-up
 
 %post
 logger -p local6.notice -t installer 'app-firewall - installing'
@@ -79,3 +80,4 @@ exit 0
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
+/usr/sbin/firewall-up
