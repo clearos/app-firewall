@@ -63,17 +63,19 @@ clearos_load_language('firewall');
 
 use \clearos\apps\base\Engine as Engine;
 use \clearos\apps\firewall\Firewall as Firewall;
-use \clearos\apps\firewall\Firewall_Rule as Firewall_Rule;
+use \clearos\apps\firewall\Rule as Rule;
 
 clearos_load_library('base/Engine');
 clearos_load_library('firewall/Firewall');
-clearos_load_library('firewall/Firewall_Rule');
+clearos_load_library('firewall/Rule');
 
 // Exceptions
 //-----------
 
+use \clearos\apps\base\Validation_Exception as Validation_Exception;
 use \clearos\apps\firewall\Firewall_Invalid_Rule_Exception as Firewall_Invalid_Rule_Exception;
 
+clearos_load_library('base/Validation_Exception');
 clearos_load_library('firewall/Firewall_Invalid_Rule_Exception');
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -92,7 +94,7 @@ clearos_load_library('firewall/Firewall_Invalid_Rule_Exception');
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
 
-class Firewall_Rule extends Engine
+class Rule extends Engine
 {
     ///////////////////////////////////////////////////////////////////////////
     // C O N S T A N T S
@@ -154,19 +156,15 @@ class Firewall_Rule extends Engine
     // M E T H O D S
     ///////////////////////////////////////////////////////////////////////////
 
-    public function __construct() 
+    public function __construct()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        parent::__construct();
-
-
-        $this->Reset();
+        $this->reset();
     }
 
     /**
-     * Reset class field members to default state.
-     *
+     * resets class field members to default state.
      *
      * @return void
      */
@@ -175,13 +173,13 @@ class Firewall_Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $this->name = "";
-        $this->group = "";
+        $this->name = '';
+        $this->group = '';
         $this->flags = 0;
-        $this->proto = Firewall_Rule::PROTO_IP;
-        $this->addr = "";
-        $this->port = "";
-        $this->param = "";
+        $this->proto = Rule::PROTO_IP;
+        $this->addr = '';
+        $this->port = '';
+        $this->param = '';
     }
 
     /**
@@ -190,18 +188,17 @@ class Firewall_Rule extends Engine
      * Rule format, 7 fields with a pipe '|' delimiter:
      * name|group|flags|proto|addr|port|param
      *
-     *
-     * @return string Valid rule in packed format
+     * @return string valid rule in packed format
      */
 
     public function get_rule()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $rule = new Firewall_Rule();
+        $rule = new Rule();
 
         // Validate member data
-        $rule->SetRule(sprintf("%s|%s|0x%08x|%d|%s|%s|%s",
+        $rule->set_rule(sprintf("%s|%s|0x%08x|%d|%s|%s|%s",
             $this->name, $this->group, $this->flags, $this->proto,
             $this->addr, $this->port, $this->param));
 
@@ -226,45 +223,45 @@ class Firewall_Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $this->Reset();
+        $this->reset();
 
         $parts = explode("|", $input);
 
         // Check field count
         if (sizeof($parts) != 7)
-            throw new Firewall_Invalid_Rule_Exception(FIREWALLRULE_LANG_ERRMSG_INVALID_FORMAT, COMMON_WARNING);
+            throw new Firewall_Invalid_Rule_Exception();
 
         // Name
-        if (strlen($parts[0])) $this->SetName($parts[0]);
+        if (strlen($parts[0])) $this->set_name($parts[0]);
 
         // Group name
-        if (strlen($parts[1])) $this->SetGroup($parts[1]);
+        if (strlen($parts[1])) $this->set_group($parts[1]);
 
         // Flags (4-byte bitmask)
         $flags = 0;
         if (!sscanf($parts[2], "0x%08x", $flags))
-            throw new Firewall_Invalid_Rule_Exception(FIREWALLRULE_LANG_ERRMSG_INVALID_FLAG, COMMON_WARNING);
+            throw new Firewall_Invalid_Rule_Exception();
 
-        $this->SetFlags($flags);
+        $this->set_flags($flags);
 
         // Protocol (integer, see /etc/protocols)
-        $this->SetProtocol($parts[3]);
+        $this->set_protocol($parts[3]);
 
         // Address (Hostname, IPv4, IPv6(at some point), MAC/HW)
-        if (strlen($parts[4])) $this->SetAddress($parts[4]);
+        if (strlen($parts[4])) $this->set_address($parts[4]);
 
         // Port address - TCP/UDP protocols only
         if (strlen($parts[5])) {
             if (strstr($parts[5], ":")) {
                 list($from, $to) = explode(":", $parts[5]);
-                $this->SetPortRange($from, $to);
+                $this->set_port_range($from, $to);
             } else {
-                $this->SetPort($parts[5]);
+                $this->set_port($parts[5]);
             }
         }
 
         // Optional rule parameter
-        if (strlen($parts[6])) $this->SetParameter($parts[6]);
+        if (strlen($parts[6])) $this->set_parameter($parts[6]);
     }
 
     /**
@@ -284,26 +281,24 @@ class Firewall_Rule extends Engine
     /**
      * Set rule name.
      *
-     * @param string $val Firewall name value
+     * @param string $name firewall name value
      *
      * @return void
      */
 
-    public function set_name($val)
+    public function set_name($name)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (!strlen($val) || $this->IsValidName($val))
-            $this->name = $val;
-        else
-            $this->AddValidationError(FIREWALL_LANG_ERRMSG_INVALID_NAME, __METHOD__, __LINE__);
+        Validation_Exception::is_valid($this->validate_name($name));
+
+        $this->name = $name;
     }
 
     /**
-     * Get rule group name.
+     * Returns rule group name.
      *
-     *
-     * @return string Firewall group name
+     * @return string firewall group name
      */
 
     public function get_group()
@@ -314,29 +309,24 @@ class Firewall_Rule extends Engine
     }
 
     /**
-     * Set rule group name.
+     * Sets rule group name.
      *
-     * @param string $val Firewall group name
+     * @param string $group firewall group name
      *
      * @return void
      */
 
-    public function set_group($val)
+    public function set_group($group)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (!strlen($val) || $this->IsValidName($val)) {
-            $this->group = $val;
-            return;
-        } else {
-            $this->AddValidationError(FIREWALL_LANG_ERRMSG_INVALID_GROUP, __METHOD__, __LINE__);
-            return;
-        }
+        Validation_Exception::is_valid($this->validate_group($group));
+
+        $this->group = $group;
     }
 
     /**
      * Returns type description.
-     *
      *
      * @return string a description of the type of rule
      */
@@ -357,35 +347,35 @@ class Firewall_Rule extends Engine
             $egressstate = $outgoingfw->GetEgressState();
         }
 
-        if ($this->flags & Firewall_Rule::INCOMING_ALLOW)
+        if ($this->flags & Rule::INCOMING_ALLOW)
             $type = FIREWALLRULE_LANG_TYPE_INCOMING_ALLOW;
-        else if ($this->flags & Firewall_Rule::INCOMING_BLOCK)
+        else if ($this->flags & Rule::INCOMING_BLOCK)
             $type = FIREWALLRULE_LANG_TYPE_INCOMING_BLOCK;
-        else if ($this->flags & Firewall_Rule::OUTGOING_BLOCK)
+        else if ($this->flags & Rule::OUTGOING_BLOCK)
             $type = ($egressstate) ? FIREWALLRULE_LANG_TYPE_OUTGOING_ALLOW : FIREWALLRULE_LANG_TYPE_OUTGOING_BLOCK;
-        else if ($this->flags & Firewall_Rule::FORWARD)
+        else if ($this->flags & Rule::FORWARD)
             $type = FIREWALLRULE_LANG_TYPE_PORT_FORWARD;
-        else if ($this->flags & Firewall_Rule::DMZ_PINHOLE)
+        else if ($this->flags & Rule::DMZ_PINHOLE)
             $type = FIREWALLRULE_LANG_TYPE_DMZ_PINHOLE;
-        else if ($this->flags & Firewall_Rule::DMZ_INCOMING)
+        else if ($this->flags & Rule::DMZ_INCOMING)
             $type = FIREWALLRULE_LANG_TYPE_DMZ_INCOMING;
-        else if ($this->flags & Firewall_Rule::ONE_TO_ONE)
+        else if ($this->flags & Rule::ONE_TO_ONE)
             $type = FIREWALLRULE_LANG_TYPE_ONE_TO_ONE_NAT;
-        else if ($this->flags & Firewall_Rule::PPTP_FORWARD)
+        else if ($this->flags & Rule::PPTP_FORWARD)
             $type = FIREWALLRULE_LANG_TYPE_PORT_FORWARD;
-        else if ($this->flags & Firewall_Rule::MAC_FILTER)
+        else if ($this->flags & Rule::MAC_FILTER)
             $type = FIREWALLRULE_LANG_TYPE_MAC_FILTER_ALLOW;
-        else if ($this->flags & Firewall_Rule::SBR_PORT)
+        else if ($this->flags & Rule::SBR_PORT)
             $type = FIREWALLRULE_LANG_TYPE_MULTIWAN_SOURCE_BASE_ROUTE;
-        else if ($this->flags & Firewall_Rule::SBR_HOST)
+        else if ($this->flags & Rule::SBR_HOST)
             $type = FIREWALLRULE_LANG_TYPE_MULTIWAN_DESTINATION_PORT;
-        else if ($this->flags & Firewall_Rule::BANDWIDTH_RATE)
+        else if ($this->flags & Rule::BANDWIDTH_RATE)
             $type = FIREWALLRULE_LANG_TYPE_BANDWIDTH;
-        else if ($this->flags & Firewall_Rule::BANDWIDTH_PRIO)
+        else if ($this->flags & Rule::BANDWIDTH_PRIO)
             $type = FIREWALLRULE_LANG_TYPE_BANDWIDTH;
-        else if ($this->flags & Firewall_Rule::PROXY_BYPASS)
+        else if ($this->flags & Rule::PROXY_BYPASS)
             $type = FIREWALLRULE_LANG_TYPE_PROXY_BYPASS;
-        else if ($this->flags & Firewall_Rule::L7FILTER_BYPASS)
+        else if ($this->flags & Rule::L7FILTER_BYPASS)
             $type = FIREWALLRULE_LANG_TYPE_L7FILTER_BYPASS;
         else
             $type = LOCALE_LANG_UNKNOWN;
@@ -396,57 +386,52 @@ class Firewall_Rule extends Engine
     /**
      * Is rule enabled?
      *
-     *
-     * @return boolean True if rule is enabled, FALSE otherwise
+     * @return boolean TRUE if rule is enabled, FALSE otherwise
      */
 
     public function is_enabled()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        return $this->flags & Firewall_Rule::ENABLED;
+        return $this->flags & Rule::ENABLED;
     }
 
-
     /**
-     * Enable rule.
+     * Enables rule.
      *
-     *
-     * @return boolean Previous rule state
+     * @return boolean previous rule state
      */
 
     public function enable()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $was = ($this->flags & Firewall_Rule::ENABLED) ? TRUE : FALSE;
-        $this->flags |= Firewall_Rule::ENABLED;
+        $was = ($this->flags & Rule::ENABLED) ? TRUE : FALSE;
+        $this->flags |= Rule::ENABLED;
+
         return $was;
     }
 
-
     /**
-     * Disable rule.
+     * Disables rule.
      *
-     *
-     * @return boolean Previous rule state
+     * @return boolean previous rule state
      */
 
     public function disable()
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $was = ($this->flags & Firewall_Rule::ENABLED) ? TRUE : FALSE;
-        $this->flags &= ~Firewall_Rule::ENABLED;
+        $was = ($this->flags & Rule::ENABLED) ? TRUE : FALSE;
+        $this->flags &= ~Rule::ENABLED;
 
         return $was;
     }
 
     /**
-     * Get rule type and flags.
+     * Returns rule type and flags.
      *
-     *
-     * @return int flags Rule flags
+     * @return integer rule flags
      */
 
     public function get_flags()
@@ -457,30 +442,26 @@ class Firewall_Rule extends Engine
     }
 
     /**
-     * Set rule type and flags.
+     * Sets rule type and flags.
      *
-     * @param int $val Rule flags
+     * @param int $flags rule flags
      *
      * @return void
      */
 
-    public function set_flags($val)
+    public function set_flags($flags)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (gettype($val) != "integer" || !$this->IsValidFlags($val)) {
-            $this->AddValidationError(FIREWALLRULE_LANG_ERRMSG_INVALID_TYPE, __METHOD__, __LINE__);
-            return;
-        }
+        Validation_Exception::is_valid($this->validate_flags($flags));
 
-        $this->flags = $val;
+        $this->flags = $flags;
     }
 
     /**
-     * Get rule protocol.
+     * Returns rule protocol.
      *
-     *
-     * @return int protocol Rule numeric protocol
+     * @return integer protocol
      */
 
     public function get_protocol()
@@ -493,24 +474,21 @@ class Firewall_Rule extends Engine
     /**
      * Set rule protocol.
      *
-     * @param int $val Rule numeric protocol
+     * @param integer $protocol protocol number
      *
      * @return void
      */
 
-    public function set_protocol($val)
+    public function set_protocol($protocol)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (!$this->IsValidProtocol($val)) {
-            $this->AddValidationError(FIREWALLRULE_LANG_ERRMSG_INVALID_PROTO, __METHOD__, __LINE__);
-            return;
-        }
+        Validation_Exception::is_valid($this->validate_protocol($protocol));
 
-        if ($val == Firewall::CONSTANT_ALL_PROTOCOLS)
+        if ($protocol == Firewall::CONSTANT_ALL_PROTOCOLS)
             return;
 
-        $this->proto = $val;
+        $this->proto = $protocol;
     }
 
     /**
@@ -529,28 +507,24 @@ class Firewall_Rule extends Engine
     /**
      * Set rule address.
      *
-     * @param string $val Rule address
+     * @param string $address rule address
      *
      * @return void
      */
 
-    public function set_address($val)
+    public function set_address($address)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (!strlen($val) || (!$this->IsValidTarget($val) && !$this->IsValidMac($val))) {
-            $this->AddValidationError(FIREWALLRULE_LANG_ERRMSG_INVALID_ADDR, __METHOD__, __LINE__);
-            return;
-        }
+        Validation_Exception::is_valid($this->validate_address($address));
 
-        $this->addr = $val;
+        $this->addr = $address;
     }
 
     /**
-     * Get rule port.
+     * Returns rule port.
      *
-     *
-     * @return int port Rule numeric port address
+     * @return integer port address
      */
 
     public function get_port()
@@ -562,9 +536,9 @@ class Firewall_Rule extends Engine
 
 
     /**
-     * Set rule port.
+     * Sets rule port.
      *
-     * @param int $port port address
+     * @param integer $port port address
      *
      * @return void
      */
@@ -573,24 +547,19 @@ class Firewall_Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $firewall = new Firewall();
-
-        if (! $firewall->IsValidPort(trim($port))) {
-            $this->AddValidationError(FIREWALL_LANG_ERRMSG_PORT_INVALID, __METHOD__, __LINE__);
-            return;
-        }
+        Validation_Exception::is_valid($this->validate_port($port));
 
         if (gettype($port == "integer") && $port == Firewall::CONSTANT_ALL_PORTS)
-            $this->port = "";
+            $this->port = '';
         else
             $this->port = trim($port);
     }
 
     /**
-     * Set rule port range.
+     * Sets rule port range.
      *
-     * @param int $from from port
-     * @param int $to to port
+     * @param integer $from from port
+     * @param integer $to   to port
      *
      * @return void
      */
@@ -599,19 +568,13 @@ class Firewall_Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $firewall = new Firewall();
-
-        if (! $firewall->IsValidPortRange($from, $to)) {
-            $this->AddValidationError(FIREWALL_LANG_ERRMSG_PORT_RANGE_INVALID, __METHOD__, __LINE__);
-            return;
-        }
+        // Validation_Exception::is_valid($this->validate_port_rnage($from, $to));
 
         $this->port = trim($from) . ":" . trim($to);
     }
 
     /**
-     * Get rule parameter value.
-     *
+     * Returns rule parameter value.
      *
      * @return mixed param Rule parameter field
      */
@@ -624,7 +587,7 @@ class Firewall_Rule extends Engine
     }
 
     /**
-     * Set rule parameter value.
+     * Sets rule parameter value.
      *
      * @param mixed $val Rule parameter value
      *
@@ -636,6 +599,8 @@ class Firewall_Rule extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         $this->param = $val;
+
+        // TODO: Is this required somewhere?
         return TRUE;
     }
 
@@ -653,35 +618,35 @@ class Firewall_Rule extends Engine
 
         switch ($protocol) {
 
-            case "TCP":
-                $protocolflag = Firewall_Rule::PROTO_TCP;
+            case 'TCP':
+                $protocol_flag = Rule::PROTO_TCP;
                 break;
 
-            case "UDP":
-                $protocolflag = Firewall_Rule::PROTO_UDP;
+            case 'UDP':
+                $protocol_flag = Rule::PROTO_UDP;
                 break;
 
-            case "GRE":
-                $protocolflag = Firewall_Rule::PROTO_GRE;
+            case 'GRE':
+                $protocol_flag = Rule::PROTO_GRE;
                 break;
 
-            case "ESP":
-            case "ipv6-crypt":
-                $protocolflag = Firewall_Rule::PROTO_ESP;
+            case 'ESP':
+            case 'ipv6-crypt':
+                $protocol_flag = Rule::PROTO_ESP;
                 break;
 
-            case "AH":
-            case "ipv6-auth":
-                $protocolflag = Firewall_Rule::PROTO_AH;
+            case 'AH':
+            case 'ipv6-auth':
+                $protocol_flag = Rule::PROTO_AH;
                 break;
 
             // TODO: clean up
-            case "ALL":
-                $protocolflag = Firewall::CONSTANT_ALL_PROTOCOLS;
+            case 'ALL':
+                $protocol_flag = Firewall::CONSTANT_ALL_PROTOCOLS;
                 break;
         }
 
-        return $protocolflag;
+        return $protocol_flag;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -691,7 +656,7 @@ class Firewall_Rule extends Engine
     /**
      * Compare this object with another, return TRUE if equal.
      *
-     * @param object $val Firewall_Rule object to compare against
+     * @param object $val Rule object to compare against
      *
      * @return boolean True if objects are equal
      */
@@ -700,20 +665,20 @@ class Firewall_Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (!($val instanceof Firewall_Rule)) return FALSE;
+        if (!($val instanceof Rule)) return FALSE;
 
         $equal = TRUE;
         $flags = $val->flags;
 
-        if ($this->flags & Firewall_Rule::ENABLED)
-            $val->flags |= Firewall_Rule::ENABLED;
+        if ($this->flags & Rule::ENABLED)
+            $val->flags |= Rule::ENABLED;
         else
-            $val->flags &= ~Firewall_Rule::ENABLED;
+            $val->flags &= ~Rule::ENABLED;
 
-        if ($this->flags & Firewall_Rule::CUSTOM)
-            $val->flags |= Firewall_Rule::CUSTOM;
+        if ($this->flags & Rule::CUSTOM)
+            $val->flags |= Rule::CUSTOM;
         else
-            $val->flags &= ~Firewall_Rule::CUSTOM;
+            $val->flags &= ~Rule::CUSTOM;
 
         if ($val->flags != $this->flags) $equal = FALSE;
         if ($val->proto != $this->proto) $equal = FALSE;
@@ -731,29 +696,46 @@ class Firewall_Rule extends Engine
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * Is the rule name (or group name) valid?
+     * Validates rule group.
      *
-     * @param string $name Firewall rule name
+     * @param string $group rule group
      *
-     * @return boolean True if rule name is valid
+     * @return error message if rule group is invalid
      */
 
-    public function is_valid_name($name)
+    public function validate_group($group)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        return (eregi("^[A-Z0-9_.-]*$", $name)) ? TRUE : FALSE;
+        if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
+            return lang('firewall_group_is_invalid');
     }
 
     /**
-     * Do the rule flags make sense?
+     * Validates rule name.
      *
-     * @param int $flags Rule flags to validate
+     * @param string $name rule name
      *
-     * @return boolean True if flags are valid
+     * @return error message if rule name is invalid
      */
 
-    public function is_valid_flags($flags)
+    public function validate_name($name)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
+            return lang('firewall_name_is_invalid');
+    }
+
+    /**
+     * Validates rule flags.
+     *
+     * @param integer $flags rule flags
+     *
+     * @return error message if rule flags is invalid
+     */
+
+    public function validate_flags($flags)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -761,62 +743,62 @@ class Firewall_Rule extends Engine
 
         $ex_flag = FALSE;
 
-        if ($flags & Firewall_Rule::INCOMING_ALLOW) {
+        if ($flags & Rule::INCOMING_ALLOW) {
             $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::INCOMING_ALLOW;
-        } else if ($flags & Firewall_Rule::INCOMING_BLOCK) {
+            $flags &= ~Rule::INCOMING_ALLOW;
+        } else if ($flags & Rule::INCOMING_BLOCK) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::INCOMING_BLOCK;
-        } else if ($flags & Firewall_Rule::OUTGOING_BLOCK) {
+            $flags &= ~Rule::INCOMING_BLOCK;
+        } else if ($flags & Rule::OUTGOING_BLOCK) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::OUTGOING_BLOCK;
-        } else if ($flags & Firewall_Rule::FORWARD) {
+            $flags &= ~Rule::OUTGOING_BLOCK;
+        } else if ($flags & Rule::FORWARD) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::FORWARD;
-        } else if ($flags & Firewall_Rule::DMZ_PINHOLE) {
+            $flags &= ~Rule::FORWARD;
+        } else if ($flags & Rule::DMZ_PINHOLE) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::DMZ_PINHOLE;
-        } else if ($flags & Firewall_Rule::DMZ_INCOMING) {
+            $flags &= ~Rule::DMZ_PINHOLE;
+        } else if ($flags & Rule::DMZ_INCOMING) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::DMZ_INCOMING;
-        } else if ($flags & Firewall_Rule::ONE_TO_ONE) {
+            $flags &= ~Rule::DMZ_INCOMING;
+        } else if ($flags & Rule::ONE_TO_ONE) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::ONE_TO_ONE;
-        } else if ($flags & Firewall_Rule::PPTP_FORWARD) {
+            $flags &= ~Rule::ONE_TO_ONE;
+        } else if ($flags & Rule::PPTP_FORWARD) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::PPTP_FORWARD;
-        } else if ($flags & Firewall_Rule::MAC_FILTER) {
+            $flags &= ~Rule::PPTP_FORWARD;
+        } else if ($flags & Rule::MAC_FILTER) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::MAC_FILTER;
-        } else if ($flags & Firewall_Rule::SBR_PORT) {
+            $flags &= ~Rule::MAC_FILTER;
+        } else if ($flags & Rule::SBR_PORT) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::SBR_PORT;
-        } else if ($flags & Firewall_Rule::SBR_HOST) {
+            $flags &= ~Rule::SBR_PORT;
+        } else if ($flags & Rule::SBR_HOST) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::SBR_HOST;
-        } else if ($flags & Firewall_Rule::BANDWIDTH_RATE) {
+            $flags &= ~Rule::SBR_HOST;
+        } else if ($flags & Rule::BANDWIDTH_RATE) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::BANDWIDTH_RATE;
-        } else if ($flags & Firewall_Rule::BANDWIDTH_PRIO) {
+            $flags &= ~Rule::BANDWIDTH_RATE;
+        } else if ($flags & Rule::BANDWIDTH_PRIO) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::BANDWIDTH_PRIO;
-        } else if ($flags & Firewall_Rule::PROXY_BYPASS) {
+            $flags &= ~Rule::BANDWIDTH_PRIO;
+        } else if ($flags & Rule::PROXY_BYPASS) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::PROXY_BYPASS;
-        } else if ($flags & Firewall_Rule::L7FILTER_BYPASS) {
+            $flags &= ~Rule::PROXY_BYPASS;
+        } else if ($flags & Rule::L7FILTER_BYPASS) {
             if ($ex_flag) return FALSE; $ex_flag = TRUE;
-            $flags &= ~Firewall_Rule::L7FILTER_BYPASS;
+            $flags &= ~Rule::L7FILTER_BYPASS;
         }
 
-        $flags &= ~Firewall_Rule::MAC_SOURCE;
-        $flags &= ~Firewall_Rule::WIFI;
-        $flags &= ~Firewall_Rule::ENABLED;
-        $flags &= ~Firewall_Rule::CUSTOM;
-        $flags &= ~Firewall_Rule::BANDWIDTH_BASIC;
-        $flags &= ~Firewall_Rule::LOCAL_NETWORK;
-        $flags &= ~Firewall_Rule::EXTERNAL_ADDR;
-        $flags &= ~Firewall_Rule::IFADDRESS;
-        $flags &= ~Firewall_Rule::IFNETWORK;
+        $flags &= ~Rule::MAC_SOURCE;
+        $flags &= ~Rule::WIFI;
+        $flags &= ~Rule::ENABLED;
+        $flags &= ~Rule::CUSTOM;
+        $flags &= ~Rule::BANDWIDTH_BASIC;
+        $flags &= ~Rule::LOCAL_NETWORK;
+        $flags &= ~Rule::EXTERNAL_ADDR;
+        $flags &= ~Rule::IFADDRESS;
+        $flags &= ~Rule::IFNETWORK;
 
         if($flags != 0) return FALSE;
 
@@ -824,63 +806,43 @@ class Firewall_Rule extends Engine
     }
 
     /**
-     * Is the rule protocol valid/supported?
+     * Validates protocol.
      *
-     * @param int $proto Numeric port address to validate
+     * @param string $protocol protocol
      *
-     * @return boolean True if numeric port address is valid
+     * @return error message if protocol is invalid
      */
 
-    public function is_valid_protocol($proto)
+    public function validate_protocol($protocol)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($proto == Firewall::CONSTANT_ALL_PROTOCOLS)
+        if ($protocol == Firewall::CONSTANT_ALL_PROTOCOLS)
             return TRUE;
 
-        if (gettype($proto) != "integer") {
-            if (!ereg("^[0-9]{1,3}$", $proto)) return FALSE;
-            settype($proto, "integer");
+        if (gettype($protocol) != "integer") {
+            if (!preg_match('/^[0-9]{1,3}$/', $protocol))
+                return FALSE;
+
+            settype($protocol, "integer");
         }
 
-        switch ($proto) {
-        case Firewall_Rule::PROTO_IP:
-        case Firewall_Rule::PROTO_TCP:
-        case Firewall_Rule::PROTO_UDP:
-        case Firewall_Rule::PROTO_GRE:
-        case Firewall_Rule::PROTO_ESP:
-        case Firewall_Rule::PROTO_AH:
-            return TRUE;
+        switch ($protocol) {
+            case Rule::PROTO_IP:
+            case Rule::PROTO_TCP:
+            case Rule::PROTO_UDP:
+            case Rule::PROTO_GRE:
+            case Rule::PROTO_ESP:
+            case Rule::PROTO_AH:
+                return TRUE;
         }
 
         return FALSE;
     }
 
     /**
-     * Validation routine for IPs.
+     * Validates address.
      *
-     * @param string ip IP address
-     *
-     * @return boolean TRUE if IP address is valid
-     */
-
-    public function is_valid_ip($ip)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $parts = explode(".", $ip);
-
-        if (sizeof($parts) != 4) return FALSE;
-
-        foreach ($parts as $part) {
-            if (!is_numeric($part) || ($part > 255) || ($part < 0))
-                return FALSE;
-        }
-
-        return TRUE;
-    }
-
-    /**
      * Is this (hostname, IPv4, and soon IPv6) address valid?
      * localhost || 192.168.0.1 || 192.168.0.1/24 || 192.168.0.1/255.255.255.0 || 192.168.0.1:192.168.1.1
      *
@@ -890,16 +852,19 @@ class Firewall_Rule extends Engine
      *
      * @param string $ip hostname, IPv4 address to validate
      *
-     * @return boolean True if address is valid
+     * @return error message if address is invalid
      */
 
-    public function is_valid_target($ip)
+    public function validate_address($ip)
     {
         clearos_profile(__METHOD__, __LINE__);
+        // FIXME: merge with Firewall
 
         $parts = array();
         
-        if( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $ip, $parts) &&
+        // TODO: IPv6...
+
+        if ( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $ip, $parts) &&
             ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)) return TRUE;
         else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})$", $ip, $parts) &&
             ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)) return TRUE;
@@ -913,37 +878,20 @@ class Firewall_Rule extends Engine
             list($lo, $hi) = explode(":", $ip);
             if (ip2long($lo) < ip2long($hi)) return TRUE;
         }
-        // TODO: IPv6...
         else if (eregi("^[A-Z0-9.-]*$", $ip)) return TRUE;
 
-        return FALSE;
+        return lang('firewall_address_is_invalid');
     }
 
     /**
-     * Is this (MAC/HW) address valid? (eg AA:BB:CC:DD:EE:FF)
-     *
-     * @param string $mac Hardware address to validate
-     *
-     * @return boolean True if hardware address is valid
-     */
-
-    public function is_valid_mac($mac)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        if (eregi("^[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}$", $mac)) return TRUE;
-        return FALSE;
-    }
-
-    /**
-     * Validates TCP port.
+     * Validates port.
      *
      * @param integer $port port address
      *
-     * @return boolean TRUE if port address is valid
+     * @return string error message if port is invalid
      */
 
-    public function is_valid_port($port)
+    public function validate_port($port)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -958,6 +906,6 @@ class Firewall_Rule extends Engine
             if ($lo < $hi) return TRUE;
         }
 
-        return FALSE;
+        return lang('firewall_port_is_invalid');
     }
 }

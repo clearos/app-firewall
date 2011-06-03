@@ -1,13 +1,13 @@
 <?php
 
 /**
- * Firewall undefined role exception class.
+ * Rule already exists exception.
  *
  * @category   Apps
  * @package    Firewall
- * @subpackage Libraries
+ * @subpackage Exceptions
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2004-2011 ClearFoundation
+ * @copyright  2003-2011 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
@@ -61,25 +61,25 @@ clearos_load_library('base/Engine_Exception');
 ///////////////////////////////////////////////////////////////////////////////
 
 /**
- * Firewall undefined role exception class.
+ * Rule already exists exception.
  *
  * @category   Apps
  * @package    Firewall
- * @subpackage Libraries
+ * @subpackage Exceptions
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2004-2011 ClearFoundation
+ * @copyright  2003-2011 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
 
-class Firewall_Undefined_Role_Exception extends Engine_Exception
+class Rule_Already_Exists_Exception extends Engine_Exception
 {
     /**
-     * Firewall_Undefined_Role_Exception constructor.
+     * Rule_Already_Exists_Exception constructor.
      */
 
     public function __construct()
     {
-        parent::__construct(lang('firewall_network_role_is_undefined'));
+        parent::__construct(lang('firewall_rule_already_exists'), CLEAROS_INFO);
     }
 }
