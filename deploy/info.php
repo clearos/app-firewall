@@ -11,20 +11,23 @@ $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
 $app['license'] = 'GPLv3';
 $app['license_core'] = 'LGPLv3';
-$app['summary'] = 'Firewall configuration tool.';
-$app['description'] = 'Firewall description... blah blah';
+$app['summary'] = lang('firewall_app_summary');
+$app['description'] = lang('firewall_app_long_description');
 
 /////////////////////////////////////////////////////////////////////////////
 // App name and categories
 /////////////////////////////////////////////////////////////////////////////
 
-$app['name'] = lang('firewall_configuration');
+$app['name'] = lang('firewall_firewall');
 $app['category'] = lang('base_category_network');
 $app['subcategory'] = lang('base_subcategory_firewall');
+$app['menu_enabled'] = FALSE;
 
 /////////////////////////////////////////////////////////////////////////////
 // Packaging
 /////////////////////////////////////////////////////////////////////////////
+
+$app['core_only'] = TRUE;
 
 $app['requires'] = array(
     'app-network',
@@ -43,4 +46,3 @@ $app['core_file_manifest'] = array(
         'group' => 'root',
     ),
 );
-

@@ -119,8 +119,12 @@ class Firewall extends Daemon
     const MODE_TRUSTED_GATEWAY = 'trustedgateway';
 
     // Protocols
-    const PROTOCOL_UDP = 'UDP';
-    const PROTOCOL_TCP = 'TCP';
+    const PROTOCOL_IP = 0;
+    const PROTOCOL_TCP = 6;
+    const PROTOCOL_UDP = 17;
+    const PROTOCOL_GRE = 47;
+    const PROTOCOL_ESP = 50;
+    const PROTOCOL_AH = 51;
 
     // Status
     const CONSTANT_NOT_CONFIGURED = 'notconfigured';
@@ -228,8 +232,10 @@ class Firewall extends Daemon
 
         $rules = $this->get_rules();
 
-        foreach ($rules as $rule)
-            if ($val->is_equal($rule)) return $rule;
+        foreach ($rules as $rule) {
+            if ($val->is_equal($rule))
+                return $rule;
+        }
 
         return NULL;
     }
@@ -271,12 +277,14 @@ class Firewall extends Daemon
         
         if (eregi("RULES=\"([A-Z0-9|/_:.\\[:space:]-]*)\"", $conf, $parts) && strlen($parts[1])) {
             $value = trim(str_replace(array("\n", "\\", "\t"), " ", $parts[1]));
-            while(strstr($value, "  ")) $value = str_replace("  ", " ", $value);
 
-            if(!strlen($value)) return $rules;
+            while (strstr($value, '  '))
+                $value = str_replace('  ', ' ', $value);
 
-            foreach(explode(" ", $value) as $rule)
-            {
+            if (!strlen($value))
+                return $rules;
+
+            foreach (explode(" ", $value) as $rule) {
                 $fwr = new Rule();
 
                 try {
@@ -586,6 +594,23 @@ class Firewall extends Daemon
     }
 
     /**
+     * Validation routine for network interface name.
+     *
+     * @param string $name network interface name.
+     *
+     * @return string error message if network interface name is invalid
+     */
+
+    public function validate_interface($interface)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // FIXME
+        // if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $interface))
+        //    return lang('firewall_network_interface_is_invalid');
+    }
+
+    /**
      * Validation routine for firewall rule name.
      *
      * @param string $name firewall rule name.
@@ -602,9 +627,7 @@ class Firewall extends Daemon
     }
 
     /**
-     * Validation routine for integer port range
-    /**
-     * Validation routine for integer port address
+     * Validation routine for integer port address.
      *
      * @param int port Numeric port address
      *
@@ -615,12 +638,26 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (! preg_match("/^\d+$/", $port))
-            return lang('firewall_port_is_invalid');
+        // TODO - Messy.
+        // This method has been used to validate ports and port ranges.
 
-        // TODO: DMZ uses 0 as a flag for "all"
-        if (($port > 65535) || ($port < 0))
-            return lang('firewall_port_is_invalid');
+        if ($port === Firewall::CONSTANT_ALL_PORTS)
+            return;
+
+        $ports = preg_split('/:/', $port, 2);
+
+        foreach ($ports as $port) {
+            if (! preg_match("/^\d+$/", $port))
+                return lang('firewall_port_is_invalid');
+
+            if (($port > 65535) || ($port < 0))
+                return lang('firewall_port_is_out_of_range');
+        }
+
+        if (count($ports) >= 2) {
+            if ($ports[0] > $ports[1])
+                return lang('firewall_port_range_is_invalid');
+        }
     }
 
     /**
@@ -636,16 +673,8 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ((! preg_match("/^\d+$/", $from)) || (! preg_match("/^\d+$/", $to)))
-            return FALSE;
-
-        if (($from > 65535) || ($from <= 0) || ($to > 65535) || ($to <= 0))
-            return FALSE;
-
-        if ($from > $to)
-            return FALSE;
-
-        return TRUE;
+        // TODO: see validate_port TODO and clean up
+        return $this->validate_port("$from:$to");
     }
 
     /**
@@ -660,8 +689,20 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (! preg_match('/^(TCP|UDP|ALL)$/', $protocol)) 
-            return lang('firewall_protocol_is_invalid');
+        if ($protocol == Firewall::CONSTANT_ALL_PROTOCOLS)
+            return;
+
+        switch ($protocol) {
+            case Firewall::PROTOCOL_TCP:
+            case Firewall::PROTOCOL_UDP:
+            case Firewall::PROTOCOL_GRE:
+            case Firewall::PROTOCOL_ESP:
+            case Firewall::PROTOCOL_AH:
+            case Firewall::PROTOCOL_IP:
+                return;
+        }
+
+        return lang('firewall_protocol_is_invalid');
     }
 
     /**

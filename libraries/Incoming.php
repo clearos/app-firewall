@@ -230,7 +230,7 @@ class Incoming extends Firewall
     /**
      * Block incoming host connection(s).
      *
-     * @param string $name    rule nickname
+     * @param string $name    rule name
      * @param string $address address
      *
      * @return void

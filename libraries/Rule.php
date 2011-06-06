@@ -103,32 +103,32 @@ class Rule extends Engine
     const INCOMING_ALLOW    = 0x00000001;    // Incoming allow; port/port range
     const INCOMING_BLOCK    = 0x00000002;    // Incoming block; host
     const OUTGOING_BLOCK    = 0x00000004;    // Outgoing block; host, port/range
-    const FORWARD            = 0x00000008;    // Forward; port/port range
-    const DMZ_PINHOLE        = 0x00000010;    // DMZ pinhole; host/port
-    const DMZ_INCOMING        = 0x00000020;    // DMZ incoming; host/port
+    const FORWARD           = 0x00000008;    // Forward; port/port range
+    const DMZ_PINHOLE       = 0x00000010;    // DMZ pinhole; host/port
+    const DMZ_INCOMING      = 0x00000020;    // DMZ incoming; host/port
     const RESERVED_0        = 0x00000040;    // Reserved
     const ONE_TO_ONE        = 0x00000080;    // One-to-one NAT
-    const PPTP_FORWARD        = 0x00000100;    // PPTP forward rule
+    const PPTP_FORWARD      = 0x00000100;    // PPTP forward rule
     const MAC_FILTER        = 0x00000200;    // HW/MAC filter rule
-    const SBR_PORT            = 0x00000400;    // SBR: by port
-    const SBR_HOST            = 0x00000800;    // SBR: by host
+    const SBR_PORT          = 0x00000400;    // SBR: by port
+    const SBR_HOST          = 0x00000800;    // SBR: by host
     const BANDWIDTH_RATE    = 0x00001000;    // Bandwidth rate rule
     const BANDWIDTH_PRIO    = 0x00002000;    // Bandwidth priority rule
-    const BANDWIDTH_BASIC    = 0x00004000;    // "Basic" bandwidth rule
+    const BANDWIDTH_BASIC   = 0x00004000;    // "Basic" bandwidth rule
     const RESERVED_1        = 0x00008000;    // Reserved
     const RESERVED_2        = 0x00010000;    // Reserved
     const RESERVED_3        = 0x00020000;    // Reserved
     const RESERVED_4        = 0x00040000;    // Reserved
     const RESERVED_5        = 0x00080000;    // Reserved
-    const LOCAL_NETWORK        = 0x00100000;    // Create rule for local networks
-    const EXTERNAL_ADDR        = 0x00200000;    // Create rule for external addr
-    const PROXY_BYPASS        = 0x00400000;    // Web Proxy Bypass
-    const L7FILTER_BYPASS    = 0x00800000;    // Layer7 Filter Bypass
+    const LOCAL_NETWORK     = 0x00100000;    // Create rule for local networks
+    const EXTERNAL_ADDR     = 0x00200000;    // Create rule for external addr
+    const PROXY_BYPASS      = 0x00400000;    // Web Proxy Bypass
+    const L7FILTER_BYPASS   = 0x00800000;    // Layer7 Filter Bypass
     const MAC_SOURCE        = 0x01000000;    // HW/MAC source address
-    const WIFI                = 0x02000000;    // Wireless rule
-    const IFADDRESS            = 0x04000000;    // Interface address 'addr' field
-    const IFNETWORK            = 0x08000000;    // Interface network 'addr' field
-    const ENABLED            = 0x10000000;    // Rule is enabled
+    const WIFI              = 0x02000000;    // Wireless rule
+    const IFADDRESS         = 0x04000000;    // Interface address 'addr' field
+    const IFNETWORK         = 0x08000000;    // Interface network 'addr' field
+    const ENABLED           = 0x10000000;    // Rule is enabled
     const CUSTOM            = 0x20000000;    // Custom rule
     const RESERVED_6        = 0x40000000;    // Reserved
     const RESERVED_7        = 0x80000000;    // Do not use this bit!
@@ -817,27 +817,9 @@ class Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($protocol == Firewall::CONSTANT_ALL_PROTOCOLS)
-            return TRUE;
+        $firewall = new Firewall();
 
-        if (gettype($protocol) != "integer") {
-            if (!preg_match('/^[0-9]{1,3}$/', $protocol))
-                return FALSE;
-
-            settype($protocol, "integer");
-        }
-
-        switch ($protocol) {
-            case Rule::PROTO_IP:
-            case Rule::PROTO_TCP:
-            case Rule::PROTO_UDP:
-            case Rule::PROTO_GRE:
-            case Rule::PROTO_ESP:
-            case Rule::PROTO_AH:
-                return TRUE;
-        }
-
-        return FALSE;
+        return $firewall->validate_protocol($protocol);
     }
 
     /**
@@ -895,17 +877,8 @@ class Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($port == Firewall::CONSTANT_ALL_PORTS)
-            return TRUE;
+        $firewall = new Firewall();
 
-        if (ereg("^[0-9]{1,5}$", $port))
-            return TRUE;
-
-        if (ereg("^[0-9]{1,5}:[0-9]{1,5}$", $port)) {
-            list($lo, $hi) = split(":", $port);
-            if ($lo < $hi) return TRUE;
-        }
-
-        return lang('firewall_port_is_invalid');
+        return $firewall->validate_port($port);
     }
 }
