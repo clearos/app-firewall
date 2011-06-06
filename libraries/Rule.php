@@ -837,32 +837,13 @@ class Rule extends Engine
      * @return error message if address is invalid
      */
 
-    public function validate_address($ip)
+    public function validate_address($address)
     {
         clearos_profile(__METHOD__, __LINE__);
-        // FIXME: merge with Firewall
 
-        $parts = array();
-        
-        // TODO: IPv6...
+        $firewall = new Firewall();
 
-        if ( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $ip, $parts) &&
-            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)) return TRUE;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})$", $ip, $parts) &&
-            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)) return TRUE;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
-            $ip, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
-            $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)) return TRUE;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}):([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
-            $ip, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
-            $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255))
-        {
-            list($lo, $hi) = explode(":", $ip);
-            if (ip2long($lo) < ip2long($hi)) return TRUE;
-        }
-        else if (eregi("^[A-Z0-9.-]*$", $ip)) return TRUE;
-
-        return lang('firewall_address_is_invalid');
+        return $firewall->validate_address($address);
     }
 
     /**

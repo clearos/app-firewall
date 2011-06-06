@@ -60,12 +60,14 @@ use \clearos\apps\base\File as File;
 use \clearos\apps\firewall\Firewall as Firewall;
 use \clearos\apps\firewall\Metadata as Metadata;
 use \clearos\apps\firewall\Rule as Rule;
+use \clearos\apps\network\Network_Utils as Network_Utils;
 
 clearos_load_library('base/Daemon');
 clearos_load_library('base/File');
 clearos_load_library('firewall/Firewall');
 clearos_load_library('firewall/Metadata');
 clearos_load_library('firewall/Rule');
+clearos_load_library('network/Network_Utils');
 
 // Exceptions
 //-----------
@@ -155,6 +157,41 @@ class Firewall extends Daemon
         clearos_profile(__METHOD__, __LINE__);
 
         parent::__construct('firewall');
+    }
+
+    /**
+     * Returns the pre-defined list of IP protocols.
+     *
+     * @return array list of pre-defined IP protocols
+     * @throws Engine_Exception
+     */
+
+    public function get_basic_protocols()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $protocols = array(
+            self::PROTOCOL_TCP => 'TCP',
+            self::PROTOCOL_UDP => 'UDP',
+        );
+
+        return $protocols;
+    }
+
+    /**
+     * Returns the pre-defined list of ports/and services.
+     *
+     * @return array list of pre-defined ports
+     * @throws Engine_Exception
+     */
+
+    public function get_standard_service_list()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $metadata = new Metadata();
+        
+        return $metadata->get_standard_service_list();
     }
 
     /**
@@ -298,22 +335,6 @@ class Firewall extends Daemon
         }
 
         return $rules;
-    }
-
-    /**
-     * Returns the pre-defined list of ports/and services.
-     *
-     * @return array list of pre-defined ports
-     * @throws Engine_Exception
-     */
-
-    protected function get_standard_service_list()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $metadata = new Metadata();
-        
-        return $metadata->get_standard_service_list();
     }
 
     /**
@@ -507,41 +528,38 @@ class Firewall extends Daemon
     /**
      * Validates address.
      *
-     * Is this (hostname, IPv4, and soon IPv6) address valid?
-     * localhost || 192.168.0.1 || 192.168.0.1/24 || 192.168.0.1/255.255.255.0 || 192.168.0.1:192.168.1.1
-     *
-     * TODO: hostname validation should be moved to IsValidHostname
-     * TODO: network validation should be moved to IsValidNetwork
-     * TODO: this class should extend Network() and use the standard validation
-     *
-     * @param string $ip hostname, IPv4 address to validate
+     * @param string $address address
      *
      * @return error message if address is invalid
      */
 
-    public function validate_address($ip)
+    public function validate_address($address)
     {
-        clearos_profile(__METHOD__, __LINE__);
+        clearos_profile(__METHOD__, __LINE__, "$address");
+
+        // TODO: MAC addresses are passed in here (?)
+        if (Network_Utils::is_valid_mac($address))
+            return;
 
         $parts = array();
 
         // TODO: IPv6...
 
-        if ( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $ip, $parts) &&
+        if ( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $address, $parts) &&
             ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)) return TRUE;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})$", $ip, $parts) &&
+        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})$", $address, $parts) &&
             ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)) return TRUE;
         else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
-            $ip, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
+            $address, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
             $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)) return TRUE;
         else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}):([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
-            $ip, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
+            $address, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
             $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255))
         {
-            list($lo, $hi) = explode(":", $ip);
+            list($lo, $hi) = explode(":", $address);
             if (ip2long($lo) < ip2long($hi)) return TRUE;
         }
-        else if (eregi("^[A-Z0-9.-]*$", $ip)) return TRUE;
+        else if (eregi("^[A-Z0-9.-]*$", $address)) return TRUE;
 
         return lang('firewall_address_is_invalid');
     }

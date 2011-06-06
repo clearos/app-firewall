@@ -33,6 +33,7 @@ $lang['firewall_protocol'] = 'Protocol';
 $lang['firewall_role'] = 'Role';
 $lang['firewall_rule'] = 'Rule';
 $lang['firewall_service'] = 'Service';
+$lang['firewall_standard_service'] = 'Standard Service';
 $lang['firewall_source_address'] = 'Source Address';
 $lang['firewall_source_port_range'] = 'Source Port (Range)';
 $lang['firewall_standard_portS'] = 'Standard Ports';
