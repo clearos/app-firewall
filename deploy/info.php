@@ -42,7 +42,7 @@ $app['core_file_manifest'] = array(
    'firewall-up' => array(
         'target' => '/usr/sbin/firewall-up',
         'mode' => '0755',
-        'onwer' => 'root',
+        'owner' => 'root',
         'group' => 'root',
     ),
 );
