@@ -1,4 +1,12 @@
 <?php
+
+$lang['firewall_from_port'] = 'From Port';
+$lang['firewall_to_port'] = 'To Port';
+$lang['firewall_start_port'] = 'Start Port';
+$lang['firewall_end_port'] = 'End Port';
+
+$lang['firewall_ip_address'] = 'IP Address';
+$lang['firewall_host'] = 'Host';
 $lang['firewall_configuration'] = 'Firewall Configuration';
 $lang['firewall_destination_address'] = 'Destination Address';
 $lang['firewall_destination_port_range'] = 'Destination Port (Range)';
