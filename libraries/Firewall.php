@@ -546,20 +546,20 @@ class Firewall extends Daemon
         // TODO: IPv6...
 
         if ( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $address, $parts) &&
-            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)) return TRUE;
+            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)) return;
         else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})$", $address, $parts) &&
-            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)) return TRUE;
+            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)) return;
         else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
             $address, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
-            $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)) return TRUE;
+            $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)) return;
         else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}):([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
             $address, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
             $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255))
         {
             list($lo, $hi) = explode(":", $address);
-            if (ip2long($lo) < ip2long($hi)) return TRUE;
+            if (ip2long($lo) < ip2long($hi)) return;
         }
-        else if (eregi("^[A-Z0-9.-]*$", $address)) return TRUE;
+        else if (eregi("^[A-Z0-9.-]*$", $address)) return;
 
         return lang('firewall_address_is_invalid');
     }
@@ -569,23 +569,15 @@ class Firewall extends Daemon
      *
      * @param string ip IP address
      *
-     * @return boolean TRUE if IP address is valid
+     * @return error message if IP is invalid
      */
 
-    public function is_valid_ip($ip)
+    public function validate_ip($ip)
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        $parts = explode(".", $ip);
-
-        if (sizeof($parts) != 4) return FALSE;
-
-        foreach ($parts as $part) {
-            if (!is_numeric($part) || ($part > 255) || ($part < 0))
-                return FALSE;
-        }
-
-        return TRUE;
+        if (! Network_Utils::is_valid_ip($ip))
+            return lang('firewall_ip_address_is_invalid');
     }
 
     /**
