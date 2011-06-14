@@ -1,0 +1,92 @@
+#!/bin/sh
+#
+# Startup script to implement /etc/rc.d/rc.firewall pre-defined rules.
+#
+# chkconfig: 2345 13 91
+# description: Automates a packet filtering firewall with iptables.
+
+. /etc/init.d/functions
+
+FW_CONFIG=/etc/firewall
+IPTABLES_CONFIG=/etc/rc.d/rc.firewall
+prog="firewall"
+
+if /sbin/lsmod 2>/dev/null | grep -q ipchains ; then
+	# Don't do both
+	exit 0
+fi
+
+start() {
+	# don't do squat if we don't have the config file
+	if [ -f $IPTABLES_CONFIG ]; then
+		echo -n $"Starting $prog: "
+		$IPTABLES_CONFIG >/dev/null 2>&1
+		if [ $? -eq 0 ]; then
+			success
+		else
+			failure
+		fi
+		echo
+		touch /var/lock/subsys/iptables
+
+		# Fix by arovuo, re-block IPs if any
+		[ -x /usr/sbin/snortsam-reblock ] && /usr/sbin/snortsam-reblock
+	fi
+}
+
+stop() {
+	chains=`cat /proc/net/ip_tables_names 2>/dev/null`
+	for i in $chains; do iptables -t $i -F; done && \
+		success $"Flushing all chains:" || \
+			failure $"Flushing all chains:"
+	for i in $chains; do iptables -t $i -X; done && \
+		success $"Removing user defined chains:" || \
+			failure $"Removing user defined chains:"
+	echo -n $"Resetting built-in chains to the default ACCEPT policy:"
+	iptables -P INPUT ACCEPT && \
+		iptables -P OUTPUT ACCEPT && \
+		iptables -P FORWARD ACCEPT && \
+		iptables -t nat -P PREROUTING ACCEPT && \
+		iptables -t nat -P POSTROUTING ACCEPT && \
+		iptables -t nat -P OUTPUT ACCEPT && \
+		iptables -t mangle -P PREROUTING ACCEPT && \
+		iptables -t mangle -P OUTPUT ACCEPT && \
+		success $"Resetting built-in chains to the default ACCEPT policy" || \
+			failure $"Resetting built-in chains to the default ACCEPT policy"
+	echo
+	rm -f /var/lock/subsys/iptables
+}
+
+case "$1" in
+  start)
+	start
+	;;
+
+  stop)
+	stop
+	;;
+
+  restart)
+	start
+	;;
+
+  condrestart)
+	[ -e /var/lock/subsys/iptables ] && start
+	;;
+
+  status)
+	echo $"Table: filter"
+	iptables --list -v
+	echo $"Table: nat"
+	iptables -t nat --list -v
+	echo $"Table: mangle"
+	iptables -t mangle --list -v
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit 0
+
+# vi: ts=4 syntax=sh

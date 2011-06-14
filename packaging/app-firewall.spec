@@ -27,6 +27,7 @@ This package provides the core API and libraries.
 mkdir -p -m 755 %{buildroot}/usr/clearos/apps/firewall
 cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
+install -d -m 0755 %{buildroot}/var/lib/firewall
 install -D -m 0755 packaging/firewall-up %{buildroot}/usr/sbin/firewall-up
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/firewall.lua %{buildroot}/etc/rc.d/firewall.lua
@@ -57,6 +58,7 @@ exit 0
 %exclude /usr/clearos/apps/firewall/packaging
 %exclude /usr/clearos/apps/firewall/tests
 %dir /usr/clearos/apps/firewall
+%dir /var/lib/firewall
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries

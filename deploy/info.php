@@ -39,6 +39,10 @@ $app['core_requires'] = array(
     'iptables',
 );
 
+$app['core_directory_manifest'] = array(
+   '/var/lib/firewall' => array(),
+);
+
 $app['core_file_manifest'] = array(
    'firewall-up' => array(
         'target' => '/usr/sbin/firewall-up',
