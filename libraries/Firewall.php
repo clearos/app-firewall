@@ -105,8 +105,7 @@ class Firewall extends Daemon
     ///////////////////////////////////////////////////////////////////////////
 
     // Files and paths
-    const FILE_CONFIG = '/etc/firewall';
-    const FILE_CUSTOM_RULES = '/etc/rc.d/rc.firewall.local';
+    const FILE_CONFIG = '/etc/clearos/firewall/config';
 
     // Roles
     const ROLE_EXTERNAL = 'EXTIF';
