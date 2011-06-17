@@ -1,0 +1,45 @@
+###############################################################################
+#
+# Use the web-based administration tool to change the firewall configuration.
+#
+###############################################################################
+
+# Squid configuration
+#--------------------
+
+SQUID_TRANSPARENT="off"
+SQUID_FILTER_PORT=""
+
+# VPN configuration
+#------------------
+
+IPSEC_SERVER="off"
+PPTP_SERVER="off"
+
+# Webconfig rules
+#----------------
+# WARNING:
+# The firewall script will not perform further validation on the rules below.
+# Use the web-based administration tool to change the firewall configuration.
+#
+# Name|Group|Flags|Protocol|Address|Port|Parameter
+#
+# -Name and Group are symbolic names which only have meaning within the
+#  web-based administration tool (webconfig).
+# -Flags are OR combined to produce a 4-byte bitmask.  This needs to be
+#  explained in full detail somewhere.  Reading the source to IsValidFlags()
+#  within the firewallrule.class file is the best documentation about this
+#  at the moment.
+# -Protocol is an integer ID listed in /etc/protocols.
+# -Address is an IPv4, IPv6, or MAC/HW address depending on the rule's flags.
+# -Port is a TCP/UDP service address depending on the rule's flags and
+#  protocol.
+# -Parameter can contain additional rule criteria depending on the rule's
+#  flags and/or protocol.
+#
+# NOTE: If editing these by hand, do not add spaces between fields.
+RULES="\
+	webservice||0x10000001|6||1875| \
+"
+
+# vim: ts=4 syntax=sh

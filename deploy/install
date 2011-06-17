@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Set default start/boot
+#-----------------------
+
+logger -p local6.notice -t installer "app-firewall-core - enabling firewall"
+/sbin/chkconfig --add firewall
+/sbin/chkconfig firewall on

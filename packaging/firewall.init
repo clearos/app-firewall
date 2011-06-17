@@ -1,14 +1,14 @@
 #!/bin/sh
 #
-# Startup script to implement /etc/rc.d/rc.firewall pre-defined rules.
+# Startup script to implement pre-defined firewall rules.
 #
 # chkconfig: 2345 13 91
 # description: Automates a packet filtering firewall with iptables.
 
 . /etc/init.d/functions
 
-FW_CONFIG=/etc/firewall
-IPTABLES_CONFIG=/etc/rc.d/rc.firewall
+FW_CONFIG=/etc/clearos/firewall/config
+IPTABLES_RUN=/usr/clearos/apps/firewall/deploy/rc.firewall
 prog="firewall"
 
 if /sbin/lsmod 2>/dev/null | grep -q ipchains ; then
@@ -18,9 +18,9 @@ fi
 
 start() {
 	# don't do squat if we don't have the config file
-	if [ -f $IPTABLES_CONFIG ]; then
+	if [ -f $IPTABLES_RUN ]; then
 		echo -n $"Starting $prog: "
-		$IPTABLES_CONFIG >/dev/null 2>&1
+		$IPTABLES_RUN >/dev/null 2>&1
 		if [ $? -eq 0 ]; then
 			success
 		else
@@ -88,5 +88,3 @@ case "$1" in
 esac
 
 exit 0
-
-# vi: ts=4 syntax=sh

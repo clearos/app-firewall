@@ -28,11 +28,10 @@ mkdir -p -m 755 %{buildroot}/usr/clearos/apps/firewall
 cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
 install -d -m 0755 %{buildroot}/var/lib/firewall
+install -D -m 0644 packaging/config %{buildroot}/etc/clearos/firewall/config
 install -D -m 0755 packaging/firewall-up %{buildroot}/usr/sbin/firewall-up
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
-install -D -m 0755 packaging/firewall.lua %{buildroot}/etc/rc.d/firewall.lua
-install -D -m 0755 packaging/rc.firewall %{buildroot}/etc/rc.d/rc.firewall
-install -D -m 0755 packaging/rc.firewall.types %{buildroot}/etc/rc.d/rc.firewall.types
+install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall/types
 
 %post
 logger -p local6.notice -t installer 'app-firewall-core - installing'
@@ -62,8 +61,7 @@ exit 0
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
+%config(noreplace) /etc/clearos/firewall/config
 /usr/sbin/firewall-up
 /etc/rc.d/init.d/firewall
-/etc/rc.d/firewall.lua
-/etc/rc.d/rc.firewall
-/etc/rc.d/rc.firewall.types
+/etc/clearos/firewall/types

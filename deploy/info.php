@@ -44,11 +44,13 @@ $app['core_directory_manifest'] = array(
 );
 
 $app['core_file_manifest'] = array(
-   'firewall-up' => array(
-        'target' => '/usr/sbin/firewall-up',
-        'mode' => '0755',
+   'config' => array(
+        'target' => '/etc/clearos/firewall/config',
+        'mode' => '0644',
         'owner' => 'root',
         'group' => 'root',
+        'config' => TRUE,
+        'config_params' => 'noreplace',
     ),
    'firewall.init' => array(
         'target' => '/etc/rc.d/init.d/firewall',
@@ -56,20 +58,14 @@ $app['core_file_manifest'] = array(
         'owner' => 'root',
         'group' => 'root',
     ),
-   'firewall.lua' => array(
-        'target' => '/etc/rc.d/firewall.lua',
+   'firewall-up' => array(
+        'target' => '/usr/sbin/firewall-up',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
     ),
-   'rc.firewall' => array(
-        'target' => '/etc/rc.d/rc.firewall',
-        'mode' => '0755',
-        'owner' => 'root',
-        'group' => 'root',
-    ),
-   'rc.firewall.types' => array(
-        'target' => '/etc/rc.d/rc.firewall.types',
+   'types' => array(
+        'target' => '/etc/clearos/firewall/types',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
