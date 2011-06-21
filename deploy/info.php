@@ -53,8 +53,8 @@ $app['core_file_manifest'] = array(
         'config' => TRUE,
         'config_params' => 'noreplace',
     ),
-   'firewall' => array(
-        'target' => '/etc/clearos/firewall',
+   'firewall.conf' => array(
+        'target' => '/etc/clearos/firewall.conf',
         'mode' => '0644',
         'owner' => 'root',
         'group' => 'root',

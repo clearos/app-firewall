@@ -29,8 +29,8 @@ cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
 install -d -m 0755 %{buildroot}/etc/clearos/firewall.d
 install -d -m 0755 %{buildroot}/var/clearos/firewall
-install -D -m 0644 packaging/firewall %{buildroot}/etc/clearos/firewall
 install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
+install -D -m 0644 packaging/firewall.conf %{buildroot}/etc/clearos/firewall.conf
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
@@ -64,8 +64,8 @@ exit 0
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
-%config(noreplace) /etc/clearos/firewall
 /usr/sbin/firewall-start
+%config(noreplace) /etc/clearos/firewall.conf
 /etc/rc.d/init.d/firewall
 %config(noreplace) /etc/clearos/firewall.d/local
 /etc/clearos/firewall.d/types

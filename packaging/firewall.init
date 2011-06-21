@@ -7,7 +7,7 @@
 
 . /etc/init.d/functions
 
-FW_CONFIG=/etc/clearos/firewall
+FW_CONFIG=/etc/clearos/firewall.conf
 IPTABLES_START=/usr/sbin/firewall-start
 prog="firewall"
 
