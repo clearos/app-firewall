@@ -16,6 +16,11 @@ SQUID_FILTER_PORT=""
 IPSEC_SERVER="off"
 PPTP_SERVER="off"
 
+# Egress mode
+#------------
+
+EGRESS_FILTERING="off"
+
 # Webconfig rules
 #----------------
 # WARNING:
