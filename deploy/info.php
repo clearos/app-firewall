@@ -40,12 +40,21 @@ $app['core_requires'] = array(
 );
 
 $app['core_directory_manifest'] = array(
-   '/var/lib/firewall' => array(),
+   '/var/clearos/firewall' => array(),
+   '/etc/clearos/firewall.d' => array(),
 );
 
 $app['core_file_manifest'] = array(
-   'config' => array(
-        'target' => '/etc/clearos/firewall/config',
+   'local' => array(
+        'target' => '/etc/clearos/firewall.d/local',
+        'mode' => '0755',
+        'owner' => 'root',
+        'group' => 'root',
+        'config' => TRUE,
+        'config_params' => 'noreplace',
+    ),
+   'firewall' => array(
+        'target' => '/etc/clearos/firewall',
         'mode' => '0644',
         'owner' => 'root',
         'group' => 'root',
@@ -58,14 +67,14 @@ $app['core_file_manifest'] = array(
         'owner' => 'root',
         'group' => 'root',
     ),
-   'firewall-up' => array(
-        'target' => '/usr/sbin/firewall-up',
+   'firewall-start' => array(
+        'target' => '/usr/sbin/firewall-start',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
     ),
    'types' => array(
-        'target' => '/etc/clearos/firewall/types',
+        'target' => '/etc/clearos/firewall.d/types',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',

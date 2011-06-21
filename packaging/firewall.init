@@ -7,20 +7,15 @@
 
 . /etc/init.d/functions
 
-FW_CONFIG=/etc/clearos/firewall/config
-IPTABLES_RUN=/usr/clearos/apps/firewall/deploy/rc.firewall
+FW_CONFIG=/etc/clearos/firewall
+IPTABLES_START=/usr/sbin/firewall-start
 prog="firewall"
-
-if /sbin/lsmod 2>/dev/null | grep -q ipchains ; then
-	# Don't do both
-	exit 0
-fi
 
 start() {
 	# don't do squat if we don't have the config file
-	if [ -f $IPTABLES_RUN ]; then
+	if [ -f $IPTABLES_START ]; then
 		echo -n $"Starting $prog: "
-		$IPTABLES_RUN >/dev/null 2>&1
+		$IPTABLES_START >/dev/null 2>&1
 		if [ $? -eq 0 ]; then
 			success
 		else

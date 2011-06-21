@@ -27,11 +27,13 @@ This package provides the core API and libraries.
 mkdir -p -m 755 %{buildroot}/usr/clearos/apps/firewall
 cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
-install -d -m 0755 %{buildroot}/var/lib/firewall
-install -D -m 0644 packaging/config %{buildroot}/etc/clearos/firewall/config
-install -D -m 0755 packaging/firewall-up %{buildroot}/usr/sbin/firewall-up
+install -d -m 0755 %{buildroot}/etc/clearos/firewall.d
+install -d -m 0755 %{buildroot}/var/clearos/firewall
+install -D -m 0644 packaging/firewall %{buildroot}/etc/clearos/firewall
+install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
-install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall/types
+install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
+install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
 
 %post
 logger -p local6.notice -t installer 'app-firewall-core - installing'
@@ -57,11 +59,13 @@ exit 0
 %exclude /usr/clearos/apps/firewall/packaging
 %exclude /usr/clearos/apps/firewall/tests
 %dir /usr/clearos/apps/firewall
-%dir /var/lib/firewall
+%dir /etc/clearos/firewall.d
+%dir /var/clearos/firewall
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
-%config(noreplace) /etc/clearos/firewall/config
-/usr/sbin/firewall-up
+%config(noreplace) /etc/clearos/firewall
+/usr/sbin/firewall-start
 /etc/rc.d/init.d/firewall
-/etc/clearos/firewall/types
+%config(noreplace) /etc/clearos/firewall.d/local
+/etc/clearos/firewall.d/types

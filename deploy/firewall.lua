@@ -169,7 +169,7 @@ function StripIpMask(ip)
 end
 
 function DisableRule(r_type, r_proto, r_addr, r_port, r_param)
-	local f = io.open("/var/lib/firewall/invalid.state", "a+")
+	local f = io.open("/var/clearos/firewall/invalid.state", "a+")
 	f:write(string.format("||0x%08x|%d|%s|%s|%s\n", r_type, r_proto, r_addr, r_port, r_param))
 	io.close(f)
 
@@ -456,7 +456,7 @@ function LoadEnvironment()
 	end
 
 	-- Empty invalid rule state file
-	f = io.open("/var/lib/firewall/invalid.state", "w+")
+	f = io.open("/var/clearos/firewall/invalid.state", "w+")
 	if f ~= nil then io.close(f) end
 
 	-- Explode rules in to a table

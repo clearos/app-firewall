@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Set default start/boot
+#-----------------------
+
+logger -p local6.notice -t installer "app-firewall-core - enabling firewall"
+/sbin/chkconfig --add firewall
+/sbin/chkconfig firewall on
+
+# Add PPP hooks
+#--------------
+
+CHECK=`grep '/usr/clearos/apps/firewall/deploy/firewall-ppp-check' /etc/ppp/ip-up.local 2>/dev/null`
+if [ -z "$CHECK" ]; then
+    logger -p local6.notice -t installer "app-firewall-core - adding PPTP and multiwan support for PPP up"
+    echo "/usr/clearos/apps/firewall/deploy/firewall-ppp-check \$1" >> /etc/ppp/ip-up.local
+    chmod 755 /etc/ppp/ip-up.local
+fi
