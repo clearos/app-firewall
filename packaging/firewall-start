@@ -163,6 +163,9 @@ RunPanicRules() {
 	$IPTABLES -A OUTPUT -o lo -j $FW_ACCEPT
 }
 
+# FIXME - lua barfs if this is not loaded
+modprobe ip_tables
+
 # Run firewall
 RC=0
 if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
