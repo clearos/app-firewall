@@ -708,7 +708,7 @@ class Rule extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
-            return lang('firewall_group_is_invalid');
+            return lang('firewall_group_invalid');
     }
 
     /**
@@ -724,7 +724,7 @@ class Rule extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
-            return lang('firewall_name_is_invalid');
+            return lang('firewall_name_invalid');
     }
 
     /**

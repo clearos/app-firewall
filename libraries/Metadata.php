@@ -240,7 +240,7 @@ class Metadata extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! Network_Utils::is_valid_hostname($hostname))
-            return lang('firewall_hostname_is_invalid');
+            return lang('firewall_hostname_invalid');
     }
 
     /**
@@ -256,11 +256,11 @@ class Metadata extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! preg_match("/^\d+$/", $port))
-            return lang('firewall_port_is_invalid');
+            return lang('firewall_port_invalid');
 
         // TODO: DMZ uses 0 as a flag for "all"
         if (($port > 65535) || ($port < 0))
-            return lang('firewall_port_is_invalid');
+            return lang('firewall_port_invalid');
     }
 
     /**
@@ -276,6 +276,6 @@ class Metadata extends Engine
         clearos_profile(__METHOD__, __LINE__);
 
         if (! preg_match("/^(TCP|UDP|ALL)$/", $protocol)) 
-            return lang('firewall_protocol_is_invalid');
+            return lang('firewall_protocol_invalid');
     }
 }

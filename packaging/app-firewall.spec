@@ -3,7 +3,7 @@ Name: app-firewall-core
 Group: ClearOS/Libraries
 Version: 5.9.9.2
 Release: 4%{dist}
-Summary: Translation missing (firewall_firewall) - APIs and install
+Summary: Firewall - APIs and install
 License: LGPLv3
 Packager: ClearFoundation
 Vendor: ClearFoundation
@@ -15,7 +15,7 @@ Requires: firewall
 Requires: iptables
 
 %description
-Translation missing (firewall_app_long_description)
+The core firewall engine for the system.
 
 This package provides the core API and libraries.
 

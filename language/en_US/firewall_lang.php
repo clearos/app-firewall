@@ -1,5 +1,26 @@
 <?php
 
+$lang['firewall_app_description'] = 'The core firewall engine for the system.';
+$lang['firewall_app_name'] = 'Firewall';
+
+$lang['firewall_address_invalid'] = 'Address is invalid.';
+$lang['firewall_firewall'] = 'Firewall';
+$lang['firewall_configuration_invalid'] = 'Configruation is invalid.';
+$lang['firewall_firewall_rule_not_found'] = 'Firewall rule was not found.';
+$lang['firewall_group_invalid'] = 'Group is invalid.';
+$lang['firewall_hostname_invalid'] = 'Hostname is invalid.';
+$lang['firewall_ip_address_invalid'] = 'IP address is invalid.';
+$lang['firewall_name_invalid'] = 'Name is invalid.';
+$lang['firewall_network_interface_invalid'] = 'Nework interface is invalid.';
+$lang['firewall_port_invalid'] = 'Port is invalid.';
+$lang['firewall_port_is_out_of_range'] = 'Port is out of range.';
+$lang['firewall_port_range_invalid'] = 'Port range is invalid.';
+$lang['firewall_protocol_invalid'] = 'Protocol is invalid.';
+$lang['firewall_rule_already_exists'] = 'Rule already exists.';
+$lang['firewall_rule_invalid:'] = 'Rule is invalid:';
+$lang['firewall_standard_service_invalid'] = 'Standard service is invalid.';
+
+
 $lang['firewall_from_port'] = 'From Port';
 $lang['firewall_to_port'] = 'To Port';
 $lang['firewall_start_port'] = 'Start Port';

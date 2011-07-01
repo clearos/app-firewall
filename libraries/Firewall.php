@@ -249,7 +249,7 @@ class Firewall extends Daemon
         }
 
         if (!$exists)
-            throw new Engine_Exception(lang('firewall_firewall_rule_not_found'));
+            throw new Engine_Exception(lang('firewall_rule_not_found'));
 
         $this->set_rules($new_rules);
     }
@@ -453,7 +453,7 @@ class Firewall extends Daemon
 
             $fw_conf->Replace($temp->get_filename());
         } else {
-            throw new Engine_Exception(lang('firewall_firewall_configuration_is_invalid'));
+            throw new Engine_Exception(lang('firewall_configuration_invalid'));
         }
     }
 
@@ -560,7 +560,7 @@ class Firewall extends Daemon
         }
         else if (eregi("^[A-Z0-9.-]*$", $address)) return;
 
-        return lang('firewall_address_is_invalid');
+        return lang('firewall_address_invalid');
     }
 
     /**
@@ -576,7 +576,7 @@ class Firewall extends Daemon
         clearos_profile(__METHOD__, __LINE__);
 
         if (! Network_Utils::is_valid_ip($ip))
-            return lang('firewall_ip_address_is_invalid');
+            return lang('firewall_ip_address_invalid');
     }
 
     /**
@@ -616,7 +616,7 @@ class Firewall extends Daemon
 
         // FIXME
         // if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $interface))
-        //    return lang('firewall_network_interface_is_invalid');
+        //    return lang('firewall_network_interface_invalid');
     }
 
     /**
@@ -632,7 +632,7 @@ class Firewall extends Daemon
         clearos_profile(__METHOD__, __LINE__);
 
         if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
-            return lang('firewall_name_is_invalid');
+            return lang('firewall_name_invalid');
     }
 
     /**
@@ -657,7 +657,7 @@ class Firewall extends Daemon
 
         foreach ($ports as $port) {
             if (! preg_match("/^\d+$/", $port))
-                return lang('firewall_port_is_invalid');
+                return lang('firewall_port_invalid');
 
             if (($port > 65535) || ($port < 0))
                 return lang('firewall_port_is_out_of_range');
@@ -665,7 +665,7 @@ class Firewall extends Daemon
 
         if (count($ports) >= 2) {
             if ($ports[0] > $ports[1])
-                return lang('firewall_port_range_is_invalid');
+                return lang('firewall_port_range_invalid');
         }
     }
 
@@ -711,7 +711,7 @@ class Firewall extends Daemon
                 return;
         }
 
-        return lang('firewall_protocol_is_invalid');
+        return lang('firewall_protocol_invalid');
     }
 
     /**
@@ -727,6 +727,6 @@ class Firewall extends Daemon
         clearos_profile(__METHOD__, __LINE__);
 
         if (! Metadata::is_valid_service($service))
-            return lang('firewall_standard_service_is_invalid');
+            return lang('firewall_standard_service_invalid');
     }
 }

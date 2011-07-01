@@ -82,6 +82,6 @@ class Firewall_Invalid_Rule_Exception extends Engine_Exception
 
     public function __construct($reason, $code)
     {
-        parent::__construct(lang('firewall_rule_is_invalid:' . " $reason"));
+        parent::__construct(lang('firewall_rule_invalid:' . " $reason"));
     }
 }
