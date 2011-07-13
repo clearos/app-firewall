@@ -1006,15 +1006,11 @@ end
 function SetKernelSettings()
 	echo("Setting kernel parameters")
 
-	-- Enable IP Forwarding, not really required for standalone mode
+	-- Enable IP Forwarding
 	execute(SYSCTL .. " -w net.ipv4.ip_forward=1 >/dev/null")
 
 	-- Enable TCP SYN Cookie protection
 	execute(SYSCTL .. " -w net.ipv4.tcp_syncookies=1 >/dev/null")
-
-	-- TODO: What was this?  Duplicate syncookie sysctl disabled.
-	-- Enable dynamic TCP/IP address hacking
-	-- execute(SYSCTL .. " -w net.ipv4.tcp_syncookies=1 >/dev/null")
 
 	-- Don't log spoofed, source-routed, or redirect packets
 	execute(SYSCTL .. " -w net.ipv4.conf.all.log_martians=0 >/dev/null")
@@ -1022,6 +1018,8 @@ function SetKernelSettings()
 	-- Disable ICMP redirects
 	execute(SYSCTL .. " -w net.ipv4.conf.all.accept_redirects=0 >/dev/null")
 	execute(SYSCTL .. " -w net.ipv4.conf.all.send_redirects=0 >/dev/null")
+	execute(SYSCTL .. " -w net.ipv4.conf.default.accept_redirects=0 >/dev/null")
+	execute(SYSCTL .. " -w net.ipv4.conf.default.send_redirects=0 >/dev/null")
 
 	-- Ensure that source-routed packets are dropped
 	execute(SYSCTL .. " -w net.ipv4.conf.all.accept_source_route=0 >/dev/null")
@@ -3296,6 +3294,9 @@ function RunMultipathRouting()
 		execute(string.format("%s rule add prio %d fwmark 0x%04x table %d",
 			IPBIN, t, mark, t))
 		execute(IPBIN .. " route ls table main | grep -Ev ^default | while read LINE; do " ..
+			"HOST=$(echo $LINE | awk '{ print $1 }'); DEV=$(echo $LINE | awk '{ print $3 }'); " ..
+			"if [ \"$HOST\" == \"" .. GetInterfaceGateway(ifn) .. "\" -a \"$DEV\" != \"" ..
+			ifn .. "\" ]; then continue; fi; " ..
 			IPBIN .. " route add table " .. t .. " $LINE; done")
 		execute(string.format("%s route add table %d default via %s dev %s",
 			IPBIN, t, GetInterfaceGateway(ifn), ifn))
