@@ -141,7 +141,6 @@ class Firewall extends Daemon
     const CONSTANT_ALL_PORTS = 0;
     const CONSTANT_ALL_PROTOCOLS = 'ALL';
     const CONSTANT_MULTIPATH = 'MULTIPATH';
-    const CONSTANT_ONE_TO_ONE_NAT_START = 200;
 
     ///////////////////////////////////////////////////////////////////////////
     // M E T H O D S
