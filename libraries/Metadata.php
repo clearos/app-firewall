@@ -255,12 +255,9 @@ class Metadata extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (! preg_match("/^\d+$/", $port))
-            return lang('firewall_port_invalid');
+        $firewall = new Firewall();
 
-        // TODO: DMZ uses 0 as a flag for "all"
-        if (($port > 65535) || ($port < 0))
-            return lang('firewall_port_invalid');
+        return $firewall->validate_port($port);
     }
 
     /**
@@ -275,7 +272,8 @@ class Metadata extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (! preg_match("/^(TCP|UDP|ALL)$/", $protocol)) 
-            return lang('firewall_protocol_invalid');
+        $firewall = new Firewall();
+
+        return $firewall->validate_protocol($protocol);
     }
 }

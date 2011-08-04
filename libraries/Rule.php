@@ -133,13 +133,6 @@ class Rule extends Engine
     const RESERVED_6        = 0x40000000;    // Reserved
     const RESERVED_7        = 0x80000000;    // Do not use this bit!
 
-    const PROTO_IP = 0;
-    const PROTO_TCP = 6;
-    const PROTO_UDP = 17;
-    const PROTO_GRE = 47;
-    const PROTO_ESP = 50;
-    const PROTO_AH = 51;
-
     ///////////////////////////////////////////////////////////////////////////
     // V A R I A B L E S
     ///////////////////////////////////////////////////////////////////////////
@@ -176,7 +169,7 @@ class Rule extends Engine
         $this->name = '';
         $this->group = '';
         $this->flags = 0;
-        $this->proto = Rule::PROTO_IP;
+        $this->proto = Firewall::PROTOCOL_IP;
         $this->addr = '';
         $this->port = '';
         $this->param = '';
@@ -472,6 +465,23 @@ class Rule extends Engine
     }
 
     /**
+     * Returns rule protocol.
+     *
+     * @return integer protocol
+     */
+
+    public function get_protocol_name()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $firewall = new Firewall();
+
+        $protocols = $firewall->get_protocols();
+
+        return $protocols[$this->proto];
+    }
+
+    /**
      * Set rule protocol.
      *
      * @param integer $protocol protocol number
@@ -619,25 +629,25 @@ class Rule extends Engine
         switch ($protocol) {
 
             case 'TCP':
-                $protocol_flag = Rule::PROTO_TCP;
+                $protocol_flag = Firewall::PROTOCOL_TCP;
                 break;
 
             case 'UDP':
-                $protocol_flag = Rule::PROTO_UDP;
+                $protocol_flag = Firewall::PROTOCOL_UDP;
                 break;
 
             case 'GRE':
-                $protocol_flag = Rule::PROTO_GRE;
+                $protocol_flag = Firewall::PROTOCOL_GRE;
                 break;
 
             case 'ESP':
             case 'ipv6-crypt':
-                $protocol_flag = Rule::PROTO_ESP;
+                $protocol_flag = Firewall::PROTOCOL_ESP;
                 break;
 
             case 'AH':
             case 'ipv6-auth':
-                $protocol_flag = Rule::PROTO_AH;
+                $protocol_flag = Firewall::PROTOCOL_AH;
                 break;
 
             // TODO: clean up

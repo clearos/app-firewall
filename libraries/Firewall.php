@@ -177,6 +177,29 @@ class Firewall extends Daemon
     }
 
     /**
+     * Returns protocol list.
+     *
+     * @return array list of protocols
+     * @throws Engine_Exception
+     */
+
+    public function get_protocols()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $protocols = array(
+            self::PROTOCOL_IP => 'IP',
+            self::PROTOCOL_TCP => 'TCP',
+            self::PROTOCOL_UDP => 'UDP',
+            self::PROTOCOL_GRE => 'UDP',
+            self::PROTOCOL_ESP => 'UDP',
+            self::PROTOCOL_AH => 'AH',
+        );
+
+        return $protocols;
+    }
+
+    /**
      * Returns the pre-defined list of ports/and services.
      *
      * @return array list of pre-defined ports
@@ -697,9 +720,6 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if ($protocol == Firewall::CONSTANT_ALL_PROTOCOLS)
-            return;
-
         switch ($protocol) {
             case Firewall::PROTOCOL_TCP:
             case Firewall::PROTOCOL_UDP:
@@ -707,6 +727,7 @@ class Firewall extends Daemon
             case Firewall::PROTOCOL_ESP:
             case Firewall::PROTOCOL_AH:
             case Firewall::PROTOCOL_IP:
+            case Firewall::CONSTANT_ALL_PROTOCOLS:
                 return;
         }
 
