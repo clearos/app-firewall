@@ -495,7 +495,7 @@ class Rule extends Engine
 
         Validation_Exception::is_valid($this->validate_protocol($protocol));
 
-        if ($protocol == Firewall::CONSTANT_ALL_PROTOCOLS)
+        if ($protocol == Firewall::PROTOCOL_ALL)
             return;
 
         $this->proto = $protocol;
@@ -626,37 +626,9 @@ class Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        switch ($protocol) {
+        $firewall = new Firewall();
 
-            case 'TCP':
-                $protocol_flag = Firewall::PROTOCOL_TCP;
-                break;
-
-            case 'UDP':
-                $protocol_flag = Firewall::PROTOCOL_UDP;
-                break;
-
-            case 'GRE':
-                $protocol_flag = Firewall::PROTOCOL_GRE;
-                break;
-
-            case 'ESP':
-            case 'ipv6-crypt':
-                $protocol_flag = Firewall::PROTOCOL_ESP;
-                break;
-
-            case 'AH':
-            case 'ipv6-auth':
-                $protocol_flag = Firewall::PROTOCOL_AH;
-                break;
-
-            // TODO: clean up
-            case 'ALL':
-                $protocol_flag = Firewall::CONSTANT_ALL_PROTOCOLS;
-                break;
-        }
-
-        return $protocol_flag;
+        return $firewall->convert_protocol_name($protocol);
     }
 
     ///////////////////////////////////////////////////////////////////////////

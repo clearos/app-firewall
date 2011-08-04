@@ -139,7 +139,7 @@ class Firewall extends Daemon
     const CONSTANT_PORT_RANGE = 'portrange';
     const CONSTANT_AUTO = 1;
     const CONSTANT_ALL_PORTS = 0;
-    const CONSTANT_ALL_PROTOCOLS = 'ALL';
+    const PROTOCOL_ALL = 'ALL';
     const CONSTANT_MULTIPATH = 'MULTIPATH';
 
     ///////////////////////////////////////////////////////////////////////////
@@ -215,6 +215,91 @@ class Firewall extends Daemon
         return $metadata->get_standard_service_list();
     }
 
+    /**
+     * Returns protocol name for given protocol number.
+     *
+     * @param string $protocol protocol name
+     *
+     * @return flag protocol flag
+     */
+
+    public function convert_protocol_name($protocol)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        switch ($protocol) {
+
+            case 'TCP':
+                $protocol_number = Firewall::PROTOCOL_TCP;
+                break;
+
+            case 'UDP':
+                $protocol_number = Firewall::PROTOCOL_UDP;
+                break;
+
+            case 'GRE':
+                $protocol_number = Firewall::PROTOCOL_GRE;
+                break;
+
+            case 'ESP':
+            case 'ipv6-crypt':
+                $protocol_number = Firewall::PROTOCOL_ESP;
+                break;
+
+            case 'AH':
+            case 'ipv6-auth':
+                $protocol_number = Firewall::PROTOCOL_AH;
+                break;
+
+            case 'ALL':
+                $protocol_number = Firewall::PROTOCOL_ALL;
+                break;
+        }
+
+        return $protocol_number;
+    }
+
+    /**
+     * Returns protocol number for a given name.
+     *
+     * @param string $protocol protocol number
+     *
+     * @return protocol number
+     */
+
+    public function convert_protocol_number($protocol)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        switch ($protocol) {
+
+            case Firewall::PROTOCOL_TCP:
+                $protocol_number = 'TCP';
+                break;
+
+            case Firewall::PROTOCOL_UDP:
+                $protocol_number = 'UDP';
+                break;
+
+            case Firewall::PROTOCOL_GRE:
+                $protocol_number = 'GRE';
+                break;
+
+            case Firewall::PROTOCOL_ESP:
+                $protocol_number = 'ESP';
+                break;
+
+            case Firewall::PROTOCOL_AH:
+                $protocol_number = 'AH';
+                break;
+
+            case Firewall::PROTOCOL_ALL:
+                $protocol_number = 'ALL';
+                break;
+        }
+
+        return $protocol_number;
+    }
     /**
      * Adds firewall rule.
      *
@@ -727,7 +812,7 @@ class Firewall extends Daemon
             case Firewall::PROTOCOL_ESP:
             case Firewall::PROTOCOL_AH:
             case Firewall::PROTOCOL_IP:
-            case Firewall::CONSTANT_ALL_PROTOCOLS:
+            case Firewall::PROTOCOL_ALL:
                 return;
         }
 

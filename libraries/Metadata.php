@@ -194,8 +194,13 @@ class Metadata extends Engine
         Validation_Exception::is_valid($this->validate_protocol($protocol));
         Validation_Exception::is_valid($this->validate_port($port));
 
+        $firewall = new Firewall();
+
+        $protocol_name = $firewall->convert_protocol_name($protocol);
+        $protocol_number = $firewall->convert_protocol_number($protocol);
+
         foreach ($this->ports as $port_info) {
-            if (($port_info[1] == $protocol) && ($port_info[2] == $port))
+            if ((($port_info[1] == $protocol_number) || ($port_info[1] == $protocol_name)) && ($port_info[2] == $port))
                 return $port_info[3];
         }
     }
