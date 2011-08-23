@@ -18,6 +18,17 @@
 #
 ###############################################################################
 
+# Default script to execute
+APP_LUA="/etc/rc.d/firewall.lua"
+
+# Multipath synchronization flag
+if [ "$1" == "--multipath-sync" ]; then
+    shift 1
+    MULTIPATH_SYNC="true"
+    APP_LUA="/etc/rc.d/multipath-sync.lua"
+fi
+export APP_LUA
+
 # ACCEPT and DROP default chain names
 export FW_DROP="DROP"
 export FW_ACCEPT="ACCEPT"
@@ -46,7 +57,6 @@ export IPTABLES="/sbin/iptables"
 export MODPROBE="/sbin/modprobe"
 export RMMOD="/sbin/rmmod"
 export SYSCTL="/sbin/sysctl"
-export APP_LUA="/usr/clearos/apps/firewall/deploy/firewall.lua"
 export SYSWATCH_STATE="/var/lib/syswatch/state"
 export APP_FW="/sbin/app-firewall"
 
@@ -166,12 +176,16 @@ RunPanicRules() {
 # FIXME - lua barfs if this is not loaded
 modprobe ip_tables
 
-# Run firewall
+# Run Lua application
 RC=0
 if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
 	trap 'rm -f "$FW_LOCKFILE"; exit $RC' INT TERM EXIT
 
 	if ($APP_FW -s $@ $APP_LUA); then
+        if [ x$MULTIPATH_SYNC == "xtrue" ]; then
+            exit $RC
+        fi
+
 		# Run Ad-hoc rules
 		# XXX: This used to be run before anything else, but because we are now
 		# queueing rules until iptc_commit(), it makes no sense to run an
@@ -197,11 +211,15 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
 	else
 		RC=1
 		rm -f "$FW_LOCKFILE"
-		RunPanicRules
+        if [ x$MULTIPATH_SYNC != "xtrue" ]; then
+		    RunPanicRules
+        fi
 	fi
 else
 	echo "Failed to acquire lock: $FW_LOCKFILE (held by $(cat $FW_LOCKFILE))"
 	exit 1
 fi 
+
+exit $RC
 
 # vim: ts=4 syntax=sh
