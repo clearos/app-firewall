@@ -2383,7 +2383,7 @@ function RunMultipath()
 	end
 
     -- Setup multipath routing tables
-    mr_init = assert(loadfile("/etc/rc.d/libmultipath.lua"))
+    mr_init = assert(loadfile("/usr/clearos/apps/firewall/deploy/libmultipath.lua"))
     mr_init()
     RunMultipathRouting()
 
@@ -2722,7 +2722,7 @@ echo("Starting firewall...")
 iptc_init()
 
 -- Load external firewall initialization routines
-firewall_init = assert(loadfile("/etc/rc.d/libfirewall.lua"))
+firewall_init = assert(loadfile("/usr/clearos/apps/firewall/deploy/libfirewall.lua"))
 firewall_init();
 
 LoadEnvironment()
