@@ -181,19 +181,18 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
 	trap 'rm -f "$FW_LOCKFILE"; exit $RC' INT TERM EXIT
 
 	if ($APP_FW -s $@ $APP_LUA); then
+		rm -f "$FW_LOCKFILE"
         if [ x$MULTIPATH_SYNC == "xtrue" ]; then
             exit $RC
         fi
 
-		# Run Ad-hoc rules
+		# Run Custom/ad-hoc rules
 		# XXX: This used to be run before anything else, but because we are now
 		# queueing rules until iptc_commit(), it makes no sense to run an
 		# external script because whatever it does will be cleared by
 		# iptc_commit().  Using the Advanced firewall rule creator in webconfig
 		# will allow custom rules to be run before others.  Ad-hoc rules should
 		# use -I to insert rules ahead of others if need be.
-		rm -f "$FW_LOCKFILE"
-
 		if [ -e $FW_CUSTOM ]; then
 			source $FW_CUSTOM || RC=1
 			/usr/bin/logger -p local6.notice -t firewall "========== start $FW_CUSTOM =========="
