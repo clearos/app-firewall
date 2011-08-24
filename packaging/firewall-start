@@ -19,13 +19,13 @@
 ###############################################################################
 
 # Default script to execute
-APP_LUA="/etc/rc.d/firewall.lua"
+APP_LUA="/usr/clearos/apps/firewall/deploy/firewall.lua"
 
 # Multipath synchronization flag
 if [ "$1" == "--multipath-sync" ]; then
     shift 1
     MULTIPATH_SYNC="true"
-    APP_LUA="/etc/rc.d/multipath-sync.lua"
+    APP_LUA="/usr/clearos/apps/firewall/deploy/multipath-sync.lua"
 fi
 export APP_LUA
 
