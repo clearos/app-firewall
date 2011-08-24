@@ -27,7 +27,6 @@ if [ "$1" == "--multipath-sync" ]; then
     MULTIPATH_SYNC="true"
     APP_LUA="/usr/clearos/apps/firewall/deploy/multipath-sync.lua"
 fi
-export APP_LUA
 
 # ACCEPT and DROP default chain names
 export FW_DROP="DROP"
