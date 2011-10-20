@@ -20,6 +20,7 @@ $lang['firewall_rule_already_exists'] = 'Rule already exists.';
 $lang['firewall_rule_invalid:'] = 'Rule is invalid:';
 $lang['firewall_standard_service_invalid'] = 'Standard service is invalid.';
 
+$lang['firewall_all_protocols_and_ports'] = 'All Protocols and Ports';
 
 $lang['firewall_from_port'] = 'From Port';
 $lang['firewall_to_port'] = 'To Port';
