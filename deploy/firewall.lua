@@ -95,6 +95,7 @@ end
 function SetKernelSettings()
 	echo("Setting kernel parameters")
 
+    -- TODO: IPv6
 	-- Enable IP Forwarding
 	execute(SYSCTL .. " -w net.ipv4.ip_forward=1 >/dev/null")
 
@@ -118,6 +119,12 @@ function SetKernelSettings()
 
 	-- Enable bad error message protection
 	execute(SYSCTL .. " -w net.ipv4.icmp_ignore_bogus_error_responses=1 >/dev/null")
+
+    -- Tune network values
+    execute(SYSCTL .. " -w net.ipv4.neigh.default.gc_thresh1=2048 >/dev/null")
+    execute(SYSCTL .. " -w net.ipv4.neigh.default.gc_thresh2=8192 >/dev/null")
+    execute(SYSCTL .. " -w net.ipv4.neigh.default.gc_thresh3=16384 >/dev/null")
+    execute(SYSCTL .. " -w net.netfilter.nf_conntrack_max=524288 >/dev/null")
 end
 
 ------------------------------------------------------------------------------
