@@ -727,6 +727,33 @@ class Firewall extends Daemon
     }
 
     /**
+     * Validation routine for IP protocols (TCP, UDP, GRE, ALL).
+     *
+     * @param string $protocol protocol
+     *
+     * @return string error message if protocol is invalid
+     */
+
+    public function validate_ip_protocol($protocol)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        switch ($protocol) {
+            case Firewall::PROTOCOL_TCP:
+            case Firewall::PROTOCOL_UDP:
+            case Firewall::PROTOCOL_GRE:
+            case Firewall::PROTOCOL_ESP:
+            case Firewall::PROTOCOL_AH:
+            case Firewall::PROTOCOL_IP:
+            case Firewall::PROTOCOL_ALL:
+                return;
+        }
+
+        return lang('firewall_protocol_invalid');
+    }
+
+
+    /**
      * Validation routine for firewall rule name.
      *
      * @param string $name firewall rule name.
@@ -806,13 +833,8 @@ class Firewall extends Daemon
         clearos_profile(__METHOD__, __LINE__);
 
         switch ($protocol) {
-            case Firewall::PROTOCOL_TCP:
-            case Firewall::PROTOCOL_UDP:
-            case Firewall::PROTOCOL_GRE:
-            case Firewall::PROTOCOL_ESP:
-            case Firewall::PROTOCOL_AH:
-            case Firewall::PROTOCOL_IP:
-            case Firewall::PROTOCOL_ALL:
+            case 'TCP':
+            case 'UDP':
                 return;
         }
 

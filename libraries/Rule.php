@@ -493,7 +493,7 @@ class Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        Validation_Exception::is_valid($this->validate_protocol($protocol));
+        Validation_Exception::is_valid($this->validate_ip_protocol($protocol));
 
         if ($protocol == Firewall::PROTOCOL_ALL)
             return;
@@ -795,13 +795,13 @@ class Rule extends Engine
      * @return error message if protocol is invalid
      */
 
-    public function validate_protocol($protocol)
+    public function validate_ip_protocol($protocol)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         $firewall = new Firewall();
 
-        return $firewall->validate_protocol($protocol);
+        return $firewall->validate_ip_protocol($protocol);
     }
 
     /**

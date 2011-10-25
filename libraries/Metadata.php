@@ -180,6 +180,9 @@ class Metadata extends Engine
     /**
      * Returns the service defined by the given port/protocol.
      *
+     * The protocol can be in either string (TCP/UDP) or numberic 
+     * (6,17) format.
+     *
      * @param string  $protocol protocol
      * @param integer $port     port
      *
@@ -191,13 +194,21 @@ class Metadata extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        Validation_Exception::is_valid($this->validate_protocol($protocol));
-        Validation_Exception::is_valid($this->validate_port($port));
+
+        if ($port)
+            Validation_Exception::is_valid($this->validate_port($port));
 
         $firewall = new Firewall();
 
-        $protocol_name = $firewall->convert_protocol_name($protocol);
-        $protocol_number = $firewall->convert_protocol_number($protocol);
+        if (is_numeric($protocol)) {
+            Validation_Exception::is_valid($firewall->validate_ip_protocol($protocol));
+            $protocol_name = $firewall->convert_protocol_number($protocol);
+            $protocol_number = -1;
+        } else {
+            Validation_Exception::is_valid($firewall->validate_protocol($protocol));
+            $protocol_name = 'nil';
+            $protocol_number = $firewall->convert_protocol_name($protocol);
+        }
 
         foreach ($this->ports as $port_info) {
             if ((($port_info[1] == $protocol_number) || ($port_info[1] == $protocol_name)) && ($port_info[2] == $port))
