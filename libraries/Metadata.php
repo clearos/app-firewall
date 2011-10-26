@@ -127,6 +127,20 @@ class Metadata extends Engine
     }
 
     /**
+     * Returns domains metadata.
+     *
+     * @return array list of domains
+     * @throws Engine_Exception
+     */
+
+    public function get_domains_list()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        return $this->domains;
+    }
+
+    /**
      * Returns the pre-defined list of ports/and services.
      *
      * @return array list of pre-defined ports
