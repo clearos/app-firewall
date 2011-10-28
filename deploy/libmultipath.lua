@@ -38,30 +38,30 @@
 ------------------------------------------------------------------------------
 
 function RunMultipathRouting()
-	local ifn
-	local t = 100
-	local ip, netmask, network, prefix
+    local ifn
+    local t = 100
+    local ip, netmask, network, prefix
 
-	-- Create high-priority "main" routing table
-	execute(IPBIN .. " route flush table 50")
-	execute(IPBIN .. " route ls table main | grep -Ev ^default | while read LINE; do " ..
-		IPBIN .. " route add table 50 $LINE; done")
+    -- Create high-priority "main" routing table
+    execute(IPBIN .. " route flush table 50")
+    execute(IPBIN .. " route ls table main | grep -Ev ^default | while read LINE; do " ..
+        IPBIN .. " route add table 50 $LINE; done")
 
-	-- Create interface routing tables
-	for _, ifn in pairs(WANIF) do
-		ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+    -- Create interface routing tables
+    for _, ifn in pairs(WANIF) do
+        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-		execute(string.format("%s route flush table %t", IPBIN, t))
-		execute(string.format("%s route ls table main | grep -Ev ^default | while read LINE; do " ..
-			"HOST=$(echo $LINE | awk '{ print $1 }'); DEV=$(echo $LINE | awk '{ print $3 }'); " ..
-			"if [ \"$HOST\" == \"%s\" -a \"$DEV\" != \"%s\" ]; then continue; fi; " ..
-			"%s route add table %d $LINE; done",
+        execute(string.format("%s route flush table %t", IPBIN, t))
+        execute(string.format("%s route ls table main | grep -Ev ^default | while read LINE; do " ..
+            "HOST=$(echo $LINE | awk '{ print $1 }'); DEV=$(echo $LINE | awk '{ print $3 }'); " ..
+            "if [ \"$HOST\" == \"%s\" -a \"$DEV\" != \"%s\" ]; then continue; fi; " ..
+            "%s route add table %d $LINE; done",
             IPBIN, GetInterfaceGateway(ifn), ifn, IPBIN, t))
-		execute(string.format("%s route add table %d default via %s dev %s",
-			IPBIN, t, GetInterfaceGateway(ifn), ifn))
+        execute(string.format("%s route add table %d default via %s dev %s",
+            IPBIN, t, GetInterfaceGateway(ifn), ifn))
 
-		t = t + 1
-	end
+        t = t + 1
+    end
 end
 
 -- vi: syntax=lua ts=4
