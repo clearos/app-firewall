@@ -1509,6 +1509,7 @@ function RunBandwidthRules()
     local r_param
     local bw_rule
     local bw_ifn
+    local bw_ifn_table = { }
     local bw_addr_src
     local bw_port_src
     local bw_prio
@@ -1679,7 +1680,14 @@ function RunBandwidthRules()
                 error(rule)
             end
 
-            bw_ifn = bw_rule[1]
+            if bw_rule[1] ~= "all" then
+                table.insert(bw_ifn_table, bw_rule[1])
+            else
+                for __, ifn in pairs(WANIF) do
+                    table.insert(bw_ifn_table, ifn)
+                end
+            end
+
             bw_addr_src = tonumber(bw_rule[2])
             bw_port_src = tonumber(bw_rule[3])
             bw_prio = tonumber(bw_rule[4])
@@ -1688,49 +1696,26 @@ function RunBandwidthRules()
             bw_down_rate = tonumber(bw_rule[7])
             bw_down_ceil = tonumber(bw_rule[8])
 
-            if bw_up_ceil == 0 then bw_up_ceil = WANIF_UPSTREAM[bw_ifn] end
-            if bw_down_ceil == 0 then bw_down_ceil = WANIF_DOWNSTREAM[bw_ifn] end
+            for __, bw_ifn in pairs(bw_ifn_table) do
+                if bw_up_ceil == 0 then bw_up_ceil = WANIF_UPSTREAM[bw_ifn] end
+                if bw_down_ceil == 0 then bw_down_ceil = WANIF_DOWNSTREAM[bw_ifn] end
 
-            -- Create upstream rules
-            if bw_up_rate ~= 0 then
-                -- Handle IP range
-                addr = Explode(":", r_addr)
+                -- Create upstream rules
+                if bw_up_rate ~= 0 then
+                    -- Handle IP range
+                    addr = Explode(":", r_addr)
 
-                lo_addr = addr[1]
-                hi_addr = addr[2]
+                    lo_addr = addr[1]
+                    hi_addr = addr[2]
 
-                if hi_addr == nil then
-                    -- Single IP
-                    if bw_addr_src == 0 then
-                        bw_src_addr = r_addr
-                        bw_dst_addr = ""
-                    else
-                        bw_src_addr = ""
-                        bw_dst_addr = r_addr
-                    end
-                    if bw_port_src == 0 then
-                        bw_src_port = r_port
-                        bw_dst_port = ""
-                    else
-                        bw_src_port = ""
-                        bw_dst_port = r_port
-                    end
-                    AddBandwidthClass(clsid_up, IMQIF_UPSTREAM[bw_ifn], bw_prio,
-                        bw_up_rate, bw_up_ceil,
-                        bw_src_addr, bw_src_port, bw_dst_addr, bw_dst_port)
-                    clsid_up = clsid_up + 1
-                else
-                    -- IP range
-                    lo_addr = ip2bin(lo_addr)
-                    hi_addr = ip2bin(hi_addr)
-
-                    for i = lo_addr, hi_addr do
+                    if hi_addr == nil then
+                        -- Single IP
                         if bw_addr_src == 0 then
-                            bw_src_addr = bin2ip(i)
+                            bw_src_addr = r_addr
                             bw_dst_addr = ""
                         else
                             bw_src_addr = ""
-                            bw_dst_addr = bin2ip(i)
+                            bw_dst_addr = r_addr
                         end
                         if bw_port_src == 0 then
                             bw_src_port = r_port
@@ -1743,49 +1728,49 @@ function RunBandwidthRules()
                             bw_up_rate, bw_up_ceil,
                             bw_src_addr, bw_src_port, bw_dst_addr, bw_dst_port)
                         clsid_up = clsid_up + 1
+                    else
+                        -- IP range
+                        lo_addr = ip2bin(lo_addr)
+                        hi_addr = ip2bin(hi_addr)
+
+                        for i = lo_addr, hi_addr do
+                            if bw_addr_src == 0 then
+                                bw_src_addr = bin2ip(i)
+                                bw_dst_addr = ""
+                            else
+                                bw_src_addr = ""
+                                bw_dst_addr = bin2ip(i)
+                            end
+                            if bw_port_src == 0 then
+                                bw_src_port = r_port
+                                bw_dst_port = ""
+                            else
+                                bw_src_port = ""
+                                bw_dst_port = r_port
+                            end
+                            AddBandwidthClass(clsid_up, IMQIF_UPSTREAM[bw_ifn], bw_prio,
+                                bw_up_rate, bw_up_ceil,
+                                bw_src_addr, bw_src_port, bw_dst_addr, bw_dst_port)
+                            clsid_up = clsid_up + 1
+                        end
                     end
                 end
-            end
 
-            -- Create downstream rules
-            if bw_down_rate ~= 0 then
-                -- Handle IP range
-                addr = Explode(":", r_addr)
+                -- Create downstream rules
+                if bw_down_rate ~= 0 then
+                    -- Handle IP range
+                    addr = Explode(":", r_addr)
 
-                lo_addr = addr[1]
-                hi_addr = addr[2]
+                    lo_addr = addr[1]
+                    hi_addr = addr[2]
 
-                if hi_addr == nil then
-                    -- Single IP
-                    if bw_addr_src == 0 then
-                        bw_src_addr = ""
-                        bw_dst_addr = r_addr
-                    else
-                        bw_src_addr = r_addr
-                        bw_dst_addr = ""
-                    end
-                    if bw_port_src == 0 then
-                        bw_src_port = ""
-                        bw_dst_port = r_port
-                    else
-                        bw_src_port = r_port
-                        bw_dst_port = ""
-                    end
-                    AddBandwidthClass(clsid_down, IMQIF_DOWNSTREAM[bw_ifn], bw_prio,
-                        bw_down_rate, bw_down_ceil,
-                        bw_src_addr, bw_src_port, bw_dst_addr, bw_dst_port)
-                    clsid_down = clsid_down + 1
-                else
-                    -- IP range
-                    lo_addr = ip2bin(lo_addr)
-                    hi_addr = ip2bin(hi_addr)
-
-                    for i = lo_addr, hi_addr do
+                    if hi_addr == nil then
+                        -- Single IP
                         if bw_addr_src == 0 then
                             bw_src_addr = ""
-                            bw_dst_addr = bin2ip(i)
+                            bw_dst_addr = r_addr
                         else
-                            bw_src_addr = bin2ip(i)
+                            bw_src_addr = r_addr
                             bw_dst_addr = ""
                         end
                         if bw_port_src == 0 then
@@ -1799,6 +1784,31 @@ function RunBandwidthRules()
                             bw_down_rate, bw_down_ceil,
                             bw_src_addr, bw_src_port, bw_dst_addr, bw_dst_port)
                         clsid_down = clsid_down + 1
+                    else
+                        -- IP range
+                        lo_addr = ip2bin(lo_addr)
+                        hi_addr = ip2bin(hi_addr)
+
+                        for i = lo_addr, hi_addr do
+                            if bw_addr_src == 0 then
+                                bw_src_addr = ""
+                                bw_dst_addr = bin2ip(i)
+                            else
+                                bw_src_addr = bin2ip(i)
+                                bw_dst_addr = ""
+                            end
+                            if bw_port_src == 0 then
+                                bw_src_port = ""
+                                bw_dst_port = r_port
+                            else
+                                bw_src_port = r_port
+                                bw_dst_port = ""
+                            end
+                            AddBandwidthClass(clsid_down, IMQIF_DOWNSTREAM[bw_ifn], bw_prio,
+                                bw_down_rate, bw_down_ceil,
+                                bw_src_addr, bw_src_port, bw_dst_addr, bw_dst_port)
+                            clsid_down = clsid_down + 1
+                        end
                     end
                 end
             end
