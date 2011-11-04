@@ -1,7 +1,7 @@
 
 Name: app-firewall-core
 Group: ClearOS/Libraries
-Version: 5.9.9.5
+Version: 6.1.0.beta2
 Release: 1%{dist}
 Summary: Firewall - APIs and install
 License: LGPLv3
