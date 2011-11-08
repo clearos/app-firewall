@@ -34,6 +34,7 @@ $app['requires'] = array(
 
 $app['core_requires'] = array(
     'app-network-core',
+    'csplugin-filewatch',
     'firewall',
     'iptables',
 );
@@ -77,5 +78,8 @@ $app['core_file_manifest'] = array(
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
+    ),
+    'filewatch-firewall.conf' => array(
+        'target' => '/etc/clearsync.d/filewatch-firewall.conf',
     ),
 );

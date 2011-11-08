@@ -11,6 +11,7 @@ Source: app-firewall-%{version}.tar.gz
 Buildarch: noarch
 Requires: app-base-core
 Requires: app-network-core
+Requires: csplugin-filewatch
 Requires: firewall
 Requires: iptables
 
@@ -29,6 +30,7 @@ cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
 install -d -m 0755 %{buildroot}/etc/clearos/firewall.d
 install -d -m 0755 %{buildroot}/var/clearos/firewall
+install -D -m 0644 packaging/filewatch-firewall.conf %{buildroot}/etc/clearsync.d/filewatch-firewall.conf
 install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
 install -D -m 0644 packaging/firewall.conf %{buildroot}/etc/clearos/firewall.conf
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
@@ -64,6 +66,7 @@ exit 0
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
+/etc/clearsync.d/filewatch-firewall.conf
 /usr/sbin/firewall-start
 %config(noreplace) /etc/clearos/firewall.conf
 /etc/rc.d/init.d/firewall
