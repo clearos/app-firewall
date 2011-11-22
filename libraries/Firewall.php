@@ -835,6 +835,7 @@ class Firewall extends Daemon
         switch ($protocol) {
             case 'TCP':
             case 'UDP':
+            case Firewall::PROTOCOL_ALL:
                 return;
         }
 
