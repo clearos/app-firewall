@@ -1992,58 +1992,55 @@ function RunOneToOneNat()
         end
     end
 
-    -- Create IP address aliases for type 2 1-to-1 NAT
-    if string.lower(ONE_TO_ONE_NAT_MODE) == "type2" then
-        -- Initialize NAT address WAN tables
-        --for _, ifn_wan in pairs(WANIF) do
-        for _, ifn_wan in pairs(WANIF_CONFIG) do
-            nat_addr[ifn_wan] = {}
-        end
+    -- Initialize NAT address WAN tables
+    --for _, ifn_wan in pairs(WANIF) do
+    for _, ifn_wan in pairs(WANIF_CONFIG) do
+        nat_addr[ifn_wan] = {}
+    end
 
-        -- Multiple WAN IP addresses are listed.
-        -- Determine unique IP addresses.
-        for _, rule in pairs(RULES) do
-            r_type, r_proto, r_addr, r_port, r_param = ExpandRule(rule)
-    
-            if b_and(r_type, tonumber(os.getenv("FWR_ENABLED"))) ~= 0 and
-                b_and(r_type, tonumber(os.getenv("FWR_ONE_TO_ONE"))) ~= 0 and
-                b_and(r_type, tonumber(os.getenv("FWR_CUSTOM"))) == 0 then
+    -- Multiple WAN IP addresses are listed.
+    -- Determine unique IP addresses.
+    for _, rule in pairs(RULES) do
+        r_type, r_proto, r_addr, r_port, r_param = ExpandRule(rule)
 
-                ifn_wan = WANIF[1]
+        if b_and(r_type, tonumber(os.getenv("FWR_ENABLED"))) ~= 0 and
+            b_and(r_type, tonumber(os.getenv("FWR_ONE_TO_ONE"))) ~= 0 and
+            b_and(r_type, tonumber(os.getenv("FWR_CUSTOM"))) == 0 then
 
-                __ = string.find(r_param, "_")
+            ifn_wan = WANIF[1]
 
-                if __ == 1 then
-                    toip = string.sub(r_param, 2)
-                elseif __ ~= nil then
-                    ifn_wan = string.sub(r_param, 1, __ - 1)
-                    toip = string.sub(r_param, __ + 1)
-                end
+            __ = string.find(r_param, "_")
 
-                f = true
-                for ___, ip in pairs(nat_addr[ifn_wan]) do
-                    if ip == r_addr then
-                        f = false; break
-                    end
-                end
+            if __ == 1 then
+                toip = string.sub(r_param, 2)
+            elseif __ ~= nil then
+                ifn_wan = string.sub(r_param, 1, __ - 1)
+                toip = string.sub(r_param, __ + 1)
+            end
 
-                if f == true then
-                    table.insert(nat_addr[ifn_wan], r_addr)
+            f = true
+            for ___, ip in pairs(nat_addr[ifn_wan]) do
+                if ip == r_addr then
+                    f = false; break
                 end
             end
-        end
 
-        -- Create aliases
-        for __, ifn_wan in pairs(WANIF) do
-            count = 200
-            ___, netmask, ___, ___ = GetInterfaceInfo(ifn_wan)
---          for ____, ip in pairs(nat_addr[ifn_wan]) do
---              echo("Creating alias IP address for 1-to-1 NAT: " .. ip)
---              execute(string.format("%s %s:%d %s netmask %s up",
---                  IFCONFIG, ifn_wan, count, ip, netmask))
---              count = count + 1
---          end
+            if f == true then
+                table.insert(nat_addr[ifn_wan], r_addr)
+            end
         end
+    end
+
+    -- Create aliases
+    for __, ifn_wan in pairs(WANIF) do
+        count = 200
+        ___, netmask, ___, ___ = GetInterfaceInfo(ifn_wan)
+        for ____, ip in pairs(nat_addr[ifn_wan]) do
+            echo("Creating alias IP address for 1-to-1 NAT: " .. ip)
+            execute(string.format("%s %s:%d %s netmask %s up",
+                IFCONFIG, ifn_wan, count, ip, netmask))
+            count = count + 1
+         end
     end
 
     -- Run 1-to-1 NAT rules - single port only
