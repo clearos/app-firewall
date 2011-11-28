@@ -51,7 +51,7 @@ function RunMultipathRouting()
     for _, ifn in pairs(WANIF) do
         ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-        execute(string.format("%s route flush table %t", IPBIN, t))
+        execute(string.format("%s route flush table %s", IPBIN, t))
         execute(string.format("%s route ls table main | grep -Ev ^default | while read LINE; do " ..
             "HOST=$(echo $LINE | awk '{ print $1 }'); DEV=$(echo $LINE | awk '{ print $3 }'); " ..
             "if [ \"$HOST\" == \"%s\" -a \"$DEV\" != \"%s\" ]; then continue; fi; " ..
