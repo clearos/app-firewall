@@ -35,7 +35,7 @@ $app['requires'] = array(
 $app['core_requires'] = array(
     'app-network-core',
     'csplugin-filewatch',
-    'firewall',
+    'firewall >= 1.4.7-3',
     'iptables',
 );
 
