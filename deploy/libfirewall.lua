@@ -464,13 +464,12 @@ function GetInterfaceInfo(ifn)
     local network = "0.0.0.0"
     local prefix = 0
 
-    -- PPPOEKLUDGE: pppX will have a netmask of: 255.255.255.255
-    if netmask ~= "255.255.255.255" then
-        network = ip_network(ip, netmask)
-        prefix = ip_prefix(netmask)
-    else
+    if if_isppp(ifn) then
         network = if_dst_address(ifn)
         prefix = 32
+    else
+        network = ip_network(ip, netmask)
+        prefix = ip_prefix(netmask)
     end
 
     return ip, netmask, network, prefix
@@ -481,8 +480,8 @@ end
 -- GetInterfaceGateway
 --
 -- Returns the gateway for the given network interface.  If none is found in
--- /etc/sysconfig/network-scripts/ifcfg-??? nil is returned.  PPPoE interfaces
--- are detected by /32 netmasks and if_dst_address() is used for their gateway.
+-- /etc/sysconfig/network-scripts/ifcfg-??? nil is returned.  For PPPoE
+-- interfaces, if_dst_address() is used for their gateway.
 -- DHCP interface gateways are found in: /var/lib/dhclient/*.routers
 --
 ------------------------------------------------------------------------------
@@ -493,7 +492,7 @@ function GetInterfaceGateway(ifn)
     local netmask = if_netmask(ifn)
 
     -- PPPOEKLUDGE: Return the peer IP address for PPP interfaces 
-    if netmask == "255.255.255.255" then
+    if if_isppp(ifn) then
         return if_dst_address(ifn)
     end
 
