@@ -654,13 +654,12 @@ function NetworkInterfaces()
     local i, f, t
     local ifn, ifn_ppp, ifn_wan
     local ifn_pppoe = {}
-    local pppoe_list
+    local pppoe_list = {}
     local difs = {}
 
     -- Build list of PPPoE bridge interfaces
     pppoe_list = if_list_pppoe()
-
-    if pppoe_list ~= nil then
+    if table.getn(pppoe_list) ~= 0 then
         table.sort(pppoe_list)
         for _, ifn in pairs(pppoe_list) do
             table.insert(ifn_pppoe, GetPhysicalInterface(ifn))
@@ -754,7 +753,7 @@ function NetworkInterfaces()
                 -- Test if interface has a set address and is up
                 if if_address(ifn) == nil then
                     echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
-                elseif if_isup(ifn) ~= 1 then
+                elseif if_isup(ifn) == false then
                     echo("Warning: LAN interface seems to be down: " .. ifn)
                 else
                     table.insert(LANIF, ifn)
@@ -778,7 +777,7 @@ function NetworkInterfaces()
                 -- Test if interface has a set address and is up
                 if if_address(ifn) == nil then
                     echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
-                elseif if_isup(ifn) ~= 1 then
+                elseif if_isup(ifn) == false then
                     echo("Warning: LAN interface seems to be down: " .. ifn)
                 else
                     table.insert(HOTIF, ifn)
@@ -802,7 +801,7 @@ function NetworkInterfaces()
                 -- Test if interface has a set address and is up
                 if if_address(ifn) == nil then
                     echo("Failed to detect IP address for DMZ device: " .. ifn)
-                elseif if_isup(ifn) ~= 1 then
+                elseif if_isup(ifn) == false then
                     echo("Warning: DMZ interface seems to be down: " .. ifn)
                 else
                     table.insert(DMZIF, ifn)
