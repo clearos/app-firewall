@@ -2,7 +2,7 @@
 Name: app-firewall
 Version: 6.2.0.beta3
 Release: 1%{dist}
-Summary: Firewall - APIs and instalcl
+Summary: Firewall - APIs and install
 License: LGPLv3
 Group: ClearOS/Libraries
 Source: app-firewall-%{version}.tar.gz
