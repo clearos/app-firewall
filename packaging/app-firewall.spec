@@ -1,7 +1,7 @@
 
 Name: app-firewall-core
 Group: ClearOS/Libraries
-Version: 6.1.0.beta2
+Version: 6.2.0.beta3
 Release: 1%{dist}
 Summary: Firewall - APIs and install
 License: LGPLv3
@@ -12,7 +12,7 @@ Buildarch: noarch
 Requires: app-base-core
 Requires: app-network-core
 Requires: csplugin-filewatch
-Requires: firewall
+Requires: firewall >= 1.4.7-3
 Requires: iptables
 
 %description
