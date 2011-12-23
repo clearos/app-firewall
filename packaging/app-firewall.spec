@@ -1,27 +1,31 @@
 
-Name: app-firewall-core
-Group: ClearOS/Libraries
+Name: app-firewall
 Version: 6.2.0.beta3
 Release: 1%{dist}
-Summary: Firewall - APIs and install
+Summary: Firewall - APIs and instalcl
 License: LGPLv3
-Packager: ClearFoundation
-Vendor: ClearFoundation
+Group: ClearOS/Libraries
 Source: app-firewall-%{version}.tar.gz
 Buildarch: noarch
+
+%description
+The core firewall engine for the system.
+
+%package core
+Summary: Firewall - APIs and install
 Requires: app-base-core
 Requires: app-network-core
 Requires: csplugin-filewatch
 Requires: firewall >= 1.4.7-3
 Requires: iptables
 
-%description
+%description core
 The core firewall engine for the system.
 
 This package provides the core API and libraries.
 
 %prep
-%setup -q -n app-firewall-%{version}
+%setup -q
 %build
 
 %install
@@ -37,7 +41,7 @@ install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
 
-%post
+%post core
 logger -p local6.notice -t installer 'app-firewall-core - installing'
 
 if [ $1 -eq 1 ]; then
@@ -48,7 +52,7 @@ fi
 
 exit 0
 
-%preun
+%preun core
 if [ $1 -eq 0 ]; then
     logger -p local6.notice -t installer 'app-firewall-core - uninstalling'
     [ -x /usr/clearos/apps/firewall/deploy/uninstall ] && /usr/clearos/apps/firewall/deploy/uninstall
@@ -56,7 +60,7 @@ fi
 
 exit 0
 
-%files
+%files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/firewall/packaging
 %exclude /usr/clearos/apps/firewall/tests
