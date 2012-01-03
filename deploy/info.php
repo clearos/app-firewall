@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '6.1.0.beta2.1';
+$app['version'] = '6.1.0.beta2.2';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';

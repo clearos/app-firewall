@@ -971,6 +971,33 @@ function RunProxyPorts()
 
     echo("Running user-defined proxy rules")
 
+    -- TODO: In version 6, the GUI usability was improved.  Instead of making users go through
+    -- hoops to disable invalid configurations, the system now uses clearsync to automatically
+    -- "do the right thing".  In particular, in the case where the web proxy was disabled, the
+    -- GUI warned the user about disabling the content filter and transparent mode.  This step
+    -- is now done here, while a clearsync plugin will watch squid.pid.
+
+    local squidpid=io.open("/var/run/squid.pid","r")
+    local dgpid=io.open("/var/run/dansguardian-av.pid","r")
+
+    if dgpid~=nil then
+        echo("Content filter is online")
+        io.close(dgpid) 
+    else
+        echo("Content filter is offline")
+        SQUID_FILTER_PORT=""
+    end
+
+    if squidpid~=nil then
+        echo("Web proxy is online")
+        io.close(squidpid) 
+    else
+        echo("Web proxy is offline")
+        SQUID_FILTER_PORT=""
+        SQUID_TRANSPARENT="off"
+        SQUID_USER_AUTHENTICATION="off"
+    end
+
     if FW_MODE == "trustedstandalone" and
         table.getn(WANIF_CONFIG) == 1 and
         string.find(WANIF_CONFIG[1], "^br%d+$") then

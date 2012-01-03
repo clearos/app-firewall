@@ -1,6 +1,6 @@
 
 Name: app-firewall
-Version: 6.1.0.beta2.1
+Version: 6.1.0.beta2.2
 Release: 1%{dist}
 Summary: Firewall - APIs and install
 License: LGPLv3
