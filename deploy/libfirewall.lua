@@ -225,7 +225,6 @@ function LoadEnvironment()
     BANDWIDTH_DOWNSTREAM_CBURST = os.getenv("BANDWIDTH_DOWNSTREAM_CBURST")
     SQUID_USER_AUTHENTICATION = os.getenv("SQUID_USER_AUTHENTICATION")
     SQUID_TRANSPARENT = os.getenv("SQUID_TRANSPARENT")
-    SQUID_FILTER_PORT = os.getenv("SQUID_FILTER_PORT")
     IPSEC_SERVER = os.getenv("IPSEC_SERVER")
     PPTP_SERVER = os.getenv("PPTP_SERVER")
     ONE_TO_ONE_NAT_MODE = os.getenv("ONE_TO_ONE_NAT_MODE")
@@ -342,9 +341,6 @@ function LoadEnvironment()
 
     if SQUID_TRANSPARENT == nil then SQUID_TRANSPARENT = "off" end
     debug("SQUID_TRANSPARENT=" .. SQUID_TRANSPARENT)
-
-    if SQUID_FILTER_PORT == nil then SQUID_FILTER_PORT = "" end
-    debug("SQUID_FILTER_PORT=" .. SQUID_FILTER_PORT)
 
     if IPSEC_SERVER == nil then IPSEC_SERVER = "off" end
     debug("IPSEC_SERVER=" .. IPSEC_SERVER)

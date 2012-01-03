@@ -980,6 +980,8 @@ function RunProxyPorts()
     local squidpid=io.open("/var/run/squid.pid","r")
     local dgpid=io.open("/var/run/dansguardian-av.pid","r")
 
+    local SQUID_FILTER_PORT="8080"
+
     if dgpid~=nil then
         echo("Content filter is online")
         io.close(dgpid) 
