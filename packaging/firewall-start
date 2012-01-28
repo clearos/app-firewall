@@ -172,7 +172,7 @@ RunPanicRules() {
 	$IPTABLES -A OUTPUT -o lo -j $FW_ACCEPT
 }
 
-# FIXME - lua barfs if this is not loaded
+# lua barfs if this is not loaded
 modprobe ip_tables
 
 # Run Lua application

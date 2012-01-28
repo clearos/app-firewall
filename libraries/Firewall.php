@@ -576,16 +576,6 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        // Validate
-        //---------
-/// FIXME
-
-/*
-        if (! is_bool($state)) {
-            throw new Engine_Exception(LOCALE_LANG_ERRMSG_INVALID_TYPE, COMMON_WARNING);
-        }
-*/
-
         // Update tag if it exists
         //------------------------
 
@@ -721,9 +711,7 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        // FIXME
-        // if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $interface))
-        //    return lang('firewall_network_interface_invalid');
+        // TODO
     }
 
     /**
