@@ -239,10 +239,8 @@ class Metadata extends Engine
      * @throws Engine_Exception, Validation_Exception
      */
 
-    public function lookup_host_metainfo($hostname)
+    public function lookup_hostname_metainfo($hostname)
     {
-        // FIXME: change to lookup_hostname_metainfo
-
         clearos_profile(__METHOD__, __LINE__);
 
         Validation_Exception::is_valid($this->validate_hostname($hostname));
