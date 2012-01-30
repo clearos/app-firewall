@@ -36,6 +36,7 @@ install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
 install -D -m 0644 packaging/firewall.conf %{buildroot}/etc/clearos/firewall.conf
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
+install -D -m 0755 packaging/snortsam-reblock %{buildroot}/usr/sbin/snortsam-reblock
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
 
 %post
@@ -72,4 +73,5 @@ exit 0
 %config(noreplace) /etc/clearos/firewall.conf
 /etc/rc.d/init.d/firewall
 %config(noreplace) /etc/clearos/firewall.d/local
+/usr/sbin/snortsam-reblock
 /etc/clearos/firewall.d/types

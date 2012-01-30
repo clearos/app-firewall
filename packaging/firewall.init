@@ -27,6 +27,17 @@ start() {
 		# Fix by arovuo, re-block IPs if any
 		[ -x /usr/sbin/snortsam-reblock ] && /usr/sbin/snortsam-reblock
 	fi
+
+	# TODO/KLUDGE: remove stray configs from anaconda installer.
+	# This should be moved somewhere else (anaconda patch, syswatch)
+	for CONFIG in `ls /etc/sysconfig/network-scripts/ifcfg-* 2>/dev/null`; do
+		NM_CONTROLLED=""
+		ONBOOT=""
+		source $CONFIG
+		if [ "$NM_CONTROLLED" = "yes" -a "$ONBOOT" = "no" ]; then
+			rm -f "$CONFIG"
+		fi
+	done
 }
 
 stop() {

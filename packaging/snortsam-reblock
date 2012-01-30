@@ -1,0 +1,61 @@
+#!/bin/bash
+# Insert iptables rules for hosts blocked by snortsam
+
+# The following rules and defines extracted from snortsam:
+# src/ssp_iptables.c
+
+# /sbin/iptables -I FORWARD 1 -i %s  -s %s -j DROP
+# /sbin/iptables -I INPUT 1 -i %s  -s %s -j DROP
+declare -i FWSAM_HOW_IN=32
+
+# /sbin/iptables -I FORWARD 1 -i %s  -d %s -j DROP
+# /sbin/iptables -I INPUT 1 -i %s  -d %s -j DROP
+declare -i FWSAM_HOW_OUT=64
+
+# /sbin/iptables -I FORWARD 1 -i %s  -s %s -j DROP
+# /sbin/iptables -I FORWARD 1 -i %s  -d %s -j DROP
+# /sbin/iptables -I INPUT 1 -i %s  -s %s -j DROP
+# /sbin/iptables -I INPUT 1 -i %s  -d %s -j DROP
+declare -i FWSAM_HOW_INOUT=$[ $FWSAM_HOW_IN | $FWSAM_HOW_OUT]
+
+# /sbin/iptables -I FORWARD 1 -i %s  -s %s  -d %s  -p %d  --dport %d -j DROP
+# /sbin/iptables -I INPUT 1 -i %s  -s %s  -d %s  -p %d  --dport %d -j DROP
+declare -i FWSAM_HOW_THIS=128
+
+FW_CONFIG=/etc/firewall
+[ -f /var/lock/snortsam -a -f $FW_CONFIG ] || exit 1
+source $FW_CONFIG
+
+export UTC=`date +"%s"`
+IPS=$(snortsam-state -qd, 2>/dev/null |\
+	awk -F, '$6 + $7 > ENVIRON["UTC"] { printf "%s:%s\n", $2, $8 }')
+for IP in $IPS; do
+	ADDR=$(echo $IP | cut -d: -f1)
+	declare -i MODE=$(echo $IP | cut -d: -f2)
+	MODE=$[ ($FWSAM_HOW_IN | $FWSAM_HOW_OUT | $FWSAM_HOW_THIS) & $MODE ]
+	if [ $MODE == $FWSAM_HOW_IN ]; then
+		for IFACE in $EXTIF; do
+			/sbin/iptables -I INPUT 1 -i $IFACE -s $ADDR -j DROP 2>/dev/null
+			/sbin/iptables -I FORWARD 1 -i $IFACE -s $ADDR -j DROP 2>/dev/null
+		done
+	elif [ $MODE == $FWSAM_HOW_OUT ]; then
+		for IFACE in $EXTIF; do
+			/sbin/iptables -I INPUT 1 -i $IFACE -d $ADDR -j DROP 2>/dev/null
+			/sbin/iptables -I FORWARD 1 -i $IFACE -d $ADDR -j DROP 2>/dev/null
+		done
+	elif [ $MODE == $FWSAM_HOW_INOUT ]; then
+		for IFACE in $EXTIF; do
+			/sbin/iptables -I INPUT 1 -i $IFACE -s $ADDR -j DROP 2>/dev/null
+			/sbin/iptables -I FORWARD 1 -i $IFACE -s $ADDR -j DROP 2>/dev/null
+			/sbin/iptables -I INPUT 1 -i $IFACE -d $ADDR -j DROP 2>/dev/null
+			/sbin/iptables -I FORWARD 1 -i $IFACE -d $ADDR -j DROP 2>/dev/null
+		done
+	elif [ $MODE == $FWSAM_HOW_THIS ]; then
+		# TODO: Implement this, need protocol and port fields.
+		echo "$0: FWSAM_HOW_THIS: Not implemented."
+	fi
+done
+
+exit 0
+
+# vi: syntax=sh ts=4

@@ -73,6 +73,12 @@ $app['core_file_manifest'] = array(
         'owner' => 'root',
         'group' => 'root',
     ),
+   'snortsam-reblock' => array(
+        'target' => '/usr/sbin/snortsam-reblock',
+        'mode' => '0755',
+        'owner' => 'root',
+        'group' => 'root',
+    ),
    'types' => array(
         'target' => '/etc/clearos/firewall.d/types',
         'mode' => '0755',
