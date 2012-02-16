@@ -1,13 +1,14 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 1.0.2
+Version: 1.0.4
 Release: 1%{dist}
 Summary: Firewall - APIs and install
 License: LGPLv3
 Group: ClearOS/Libraries
 Source: app-firewall-%{version}.tar.gz
 Buildarch: noarch
+
 %description
 The core firewall engine for the system.
 
