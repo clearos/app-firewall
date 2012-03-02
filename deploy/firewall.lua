@@ -329,32 +329,6 @@ end
 
 ------------------------------------------------------------------------------
 --
--- UnloadNatKernelModules
--- 
--- Unloads kernel modules required for NAT
---
-------------------------------------------------------------------------------
-
-function UnloadNatKernelModules()
-    local modules = {}
-
-    echo("Unloading unecessary NAT kernel modules")
-
-    table.insert(modules, "ip_nat_ftp")
-    table.insert(modules, "ip_nat_irc")
-    table.insert(modules, "ip_nat_pptp")
-    table.insert(modules, "ip_nat_h323")
-    table.insert(modules, "ip_nat_proto_gre")
-    table.insert(modules, "ipt_MASQUERADE")
-    table.insert(modules, "iptable_nat")
-
-    for _, m in pairs(modules) do
-        execute(string.format("%s %s >/dev/null 2>&1", RMMOD, m))
-    end
-end
-
-------------------------------------------------------------------------------
---
 -- RunCommonRules
 --
 -- Rules that should be included in *all* firewall modes should go here.
@@ -2215,24 +2189,20 @@ function RunMasquerading()
             network, prefix))
     end
 
-    for _, ifn in pairs(LANIF) do
-        if table.getn(WANIF) == 0 then
-            if table.getn(WANIF_CONFIG) == 0 then
-                echo("Disabling NAT - no active WANS")
-            else
-                echo(string.format("Enabling standby NAT on WAN/LAN interface %s/%s", WANIF_CONFIG[1], ifn))
-                iptables("nat",
-                    string.format("-A POSTROUTING -o %s -j MASQUERADE", WANIF_CONFIG[1]))
-            end
-        elseif MULTIPATH == "off" or table.getn(WANIF) == 1 then
-            echo(string.format("Enabling NAT on WAN/LAN interface %s/%s", WANIF[1], ifn))
-            iptables("nat",
-                string.format("-A POSTROUTING -o %s -j MASQUERADE", WANIF[1]))
-        elseif MULTIPATH == "on" then
-            for _, ifn_wan in pairs(WANIF) do
-                echo(string.format("Enabling NAT on WAN/LAN interface %s/%s", ifn_wan, ifn))
-                iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", ifn_wan))
-            end
+    if table.getn(WANIF) == 0 then
+        if table.getn(WANIF_CONFIG) == 0 then
+            echo("Disabling NAT - no active WANS")
+        else
+            echo(string.format("Enabling standby NAT on WAN interface %s", WANIF_CONFIG[1]))
+            iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", WANIF_CONFIG[1]))
+        end
+    elseif MULTIPATH == "off" or table.getn(WANIF) == 1 then
+        echo(string.format("Enabling NAT on WAN interface %s", WANIF[1]))
+        iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", WANIF[1]))
+    elseif MULTIPATH == "on" then
+        for _, ifn_wan in pairs(WANIF) do
+            echo(string.format("Enabling NAT on WAN interface %s", ifn_wan))
+            iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", ifn_wan))
         end
     end
 end
@@ -2616,12 +2586,13 @@ end
 function TrustedStandAlone()
     echo("Using trusted standalone mode (no firewall)")
 
-    UnloadNatKernelModules()
     LoadKernelModules()
+    LoadNatKernelModules()
     SetPolicyToAccept()
     DefineChains()
     RunCustomRules()
     RunProxyPorts()
+    RunMasquerading()
 end
 
 ------------------------------------------------------------------------------
@@ -2636,8 +2607,8 @@ end
 function StandAlone()
     echo("Using standalone mode")
 
-    UnloadNatKernelModules()
     LoadKernelModules()
+    LoadNatKernelModules()
     SetPolicyToDrop()
     DefineChains()
     RunBlockedHosts()
@@ -2647,6 +2618,7 @@ function StandAlone()
     RunIncomingAllowed()
     RunIncomingAllowedDefaults()
     RunProxyPorts()
+    RunMasquerading()
 end
 
 ------------------------------------------------------------------------------
@@ -2697,7 +2669,6 @@ function TrustedGateway()
 
     echo("Using trusted gateway mode")
 
-    UnloadNatKernelModules()
     LoadKernelModules()
     SetPolicyToAccept()
     DefineChains()
