@@ -329,6 +329,32 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- UnloadNatKernelModules
+-- 
+-- Unloads kernel modules required for NAT
+--
+------------------------------------------------------------------------------
+
+function UnloadNatKernelModules()
+    local modules = {}
+
+    echo("Unloading unecessary NAT kernel modules")
+
+    table.insert(modules, "ip_nat_ftp")
+    table.insert(modules, "ip_nat_irc")
+    table.insert(modules, "ip_nat_pptp")
+    table.insert(modules, "ip_nat_h323")
+    table.insert(modules, "ip_nat_proto_gre")
+    table.insert(modules, "ipt_MASQUERADE")
+    table.insert(modules, "iptable_nat")
+
+    for _, m in pairs(modules) do
+        execute(string.format("%s %s >/dev/null 2>&1", RMMOD, m))
+    end
+end
+
+------------------------------------------------------------------------------
+--
 -- RunCommonRules
 --
 -- Rules that should be included in *all* firewall modes should go here.
@@ -2657,6 +2683,28 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- T R A N S P A R E N T  B R I D G E 
+--
+------------------------------------------------------------------------------
+
+function Bridge()
+    local ifn
+    local ifn_lan
+    local network
+    local prefix
+
+    echo("Using transparent bridge mode")
+
+    UnloadNatKernelModules()
+    LoadKernelModules()
+    SetPolicyToAccept()
+    DefineChains()
+    RunCustomRules()
+    RunBandwidthRules()
+end
+
+------------------------------------------------------------------------------
+--
 -- T R U S T E D  G A T E W A Y
 --
 ------------------------------------------------------------------------------
@@ -2785,6 +2833,7 @@ ShowFirewallMode()
 
 if FW_MODE == "gateway" then Gateway()
 elseif FW_MODE == "trustedgateway" then TrustedGateway()
+elseif FW_MODE == "bridge" then Bridge()
 elseif FW_MODE == "standalone" then StandAlone()
 elseif FW_MODE == "trustedstandalone" then TrustedStandAlone()
 elseif FW_MODE == "dmz" then Dmz()

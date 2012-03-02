@@ -118,6 +118,7 @@ class Firewall extends Daemon
     const MODE_STANDALONE = 'standalone';
     const MODE_TRUSTED_STANDALONE = 'trustedstandalone';
     const MODE_TRUSTED_GATEWAY = 'trustedgateway';
+    const MODE_BRIDGE = 'bridge';
 
     // Protocols
     const PROTOCOL_IP = 0;
@@ -693,6 +694,7 @@ class Firewall extends Daemon
             case Firewall::MODE_STANDALONE:
             case Firewall::MODE_TRUSTED_STANDALONE:
             case Firewall::MODE_TRUSTED_GATEWAY:
+            case Firewall::MODE_BRIDGE:
             return TRUE;
         }
 
