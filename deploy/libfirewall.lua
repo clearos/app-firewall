@@ -464,7 +464,11 @@ function GetInterfaceInfo(ifn)
         network = if_dst_address(ifn)
         prefix = 32
     else
-        network = ip_network(ip, netmask)
+        if netmask == "255.255.255.255" then
+            network = ip
+        else
+            network = ip_network(ip, netmask)
+        end
         prefix = ip_prefix(netmask)
     end
 
