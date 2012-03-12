@@ -2215,6 +2215,7 @@ function RunMasquerading()
             network, prefix))
     end
 
+    -- TODO: migrate miniupnpd to plugin framework
     if table.getn(WANIF) == 0 then
         if table.getn(WANIF_CONFIG) == 0 then
             echo("Disabling NAT - no active WANS")
@@ -2229,6 +2230,55 @@ function RunMasquerading()
         for _, ifn_wan in pairs(WANIF) do
             echo(string.format("Enabling NAT on WAN interface %s", ifn_wan))
             iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", ifn_wan))
+        end
+    end
+end
+
+------------------------------------------------------------------------------
+--
+-- RunUpnp
+--
+-- Run UPnP hooks
+-- TODO: migrate this to plugin framework
+--
+------------------------------------------------------------------------------
+
+function RunUpnp()
+    local ifn
+    local ifn_wan
+    local network
+    local prefix
+
+    local miniupnpd=io.open("/usr/sbin/miniupnpd","r")
+
+    if miniupnpd~=nil then
+        io.close(miniupnpd)
+    else
+        return
+    end
+
+    -- Create chains for miniupnd TODO: migrate to plugin framework
+    iptc_create_chain("filter", "MINIUPNPD")
+    iptc_create_chain("nat", "MINIUPNPD")
+
+    -- The logic is straight from RunMasquerading
+    if table.getn(WANIF) == 0 then
+        if table.getn(WANIF_CONFIG) == 0 then
+            echo("Disabling UPnP - no active WANS")
+        else
+            echo(string.format("Enabling standby UPnP on WAN interface %s", WANIF_CONFIG[1]))
+            iptables("nat", string.format("-A PREROUTING -i %s -j MINIUPNPD", WANIF_CONFIG[1]))
+            iptables("filter", string.format("-A FORWARD -i %s ! -o %s -j MINIUPNPD", WANIF_CONFIG[1], WANIF_CONFIG[1]))
+        end
+    elseif MULTIPATH == "off" or table.getn(WANIF) == 1 then
+        echo(string.format("Enabling UPnP on WAN interface %s", WANIF[1]))
+        iptables("nat", string.format("-A PREROUTING -i %s -j MINIUPNPD", WANIF[1]))
+        iptables("filter", string.format("-A FORWARD -i %s ! -o %s -j MINIUPNPD", WANIF[1], WANIF[1]))
+    elseif MULTIPATH == "on" then
+        for _, ifn_wan in pairs(WANIF) do
+            echo(string.format("Enabling UPnP on WAN interface %s", ifn_wan))
+            iptables("nat", string.format("-A PREROUTING -i %s -j MINIUPNPD", ifn_wan))
+            iptables("filter", string.format("-A FORWARD -i %s ! -o %s -j MINIUPNPD", ifn_wan, ifn_wan))
         end
     end
 end
@@ -2677,6 +2727,7 @@ function Gateway()
     RunProxyPorts()
     RunMultipath()
     RunMasquerading()
+    RunUpnp()
     RunOutgoingDenied()
     RunForwardingDefaults()
 end
@@ -2766,6 +2817,7 @@ function Dmz()
     RunProxyPorts()
     RunMultipath()
     RunMasquerading()
+    RunUpnp()
     RunForwardingDmz()
     RunOutgoingDenied()
     RunForwardingDefaults()
