@@ -51,7 +51,6 @@ export FW_DEFAULT_MODE="trustedstandalone"
 # Binaries
 export APP_FW="/sbin/app-firewall"
 export IPBIN="/sbin/ip"
-export IPCALC="/bin/ipcalc"
 export IPTABLES="/sbin/iptables"
 export MODPROBE="/sbin/modprobe"
 export RMMOD="/sbin/rmmod"
