@@ -17,16 +17,8 @@ TYPE=`echo $1 | sed 's/[0-9].*//'`
 if [ -e "/etc/sysconfig/network-scripts/ifcfg-$1" ]; then
 	logger -p local6.notice -t firewall "detected connection type - PPPoE DSL"
 	/sbin/service firewall restart
-	/usr/sbin/dnsupdate
+	[ -x /usr/sbin/dnsupdate ] && /usr/sbin/dnsupdate
 elif [ "$TYPE" == "pptp" ]; then
-	if [ -e /etc/clearos/multiwan ]; then
-		. /etc/clearos/multiwan
-	fi
-	if ( [ "$MULTIPATH" == "on" ] || [ "$MULTIPATH" == "yes" ] ); then
-		logger -p local6.notice -t firewall "detected connection type - PPTP VPN on multi-WAN"
-		/sbin/service firewall restart
-	else
-		logger -p local6.notice -t firewall "detected connection type - PPTP VPN"
-	fi
+    logger -p local6.notice -t firewall "detected connection type - PPTP VPN"
 	/sbin/ifconfig $1 mtu 1500
 fi
