@@ -15,10 +15,10 @@ logger -p local6.notice -t firewall "detected new connection on $1"
 TYPE=`echo $1 | sed 's/[0-9].*//'`
 
 if [ -e "/etc/sysconfig/network-scripts/ifcfg-$1" ]; then
-	logger -p local6.notice -t firewall "detected connection type - PPPoE DSL"
-	/sbin/service firewall restart
-	[ -x /usr/sbin/dnsupdate ] && /usr/sbin/dnsupdate
+    logger -p local6.notice -t firewall "detected connection type - PPPoE DSL"
+    /sbin/service firewall restart
+    [ -x /usr/sbin/dnsupdate ] && /usr/sbin/dnsupdate
 elif [ "$TYPE" == "pptp" ]; then
     logger -p local6.notice -t firewall "detected connection type - PPTP VPN"
-	/sbin/ifconfig $1 mtu 1500
+    /sbin/ifconfig $1 mtu 1500
 fi
