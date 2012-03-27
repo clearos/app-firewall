@@ -2353,6 +2353,24 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- RunStandaloneForwarding()
+--
+-- Run default forwarding rules in standalone mode (VPN server)
+--
+------------------------------------------------------------------------------
+
+function RunStandaloneForwarding()
+    echo("Running default forwarding rules")
+
+    iptables("filter", "-A FORWARD -i pptp+ -j " .. FW_ACCEPT)
+    iptables("filter", "-A FORWARD -i tun+ -j " .. FW_ACCEPT)
+
+    iptables("filter", "-A FORWARD -o pptp+ -m state --state ESTABLISHED,RELATED -j " .. FW_ACCEPT)
+    iptables("filter", "-A FORWARD -o tun+ -m state --state ESTABLISHED,RELATED -j " .. FW_ACCEPT)
+end
+
+------------------------------------------------------------------------------
+--
 -- RunForwardingDmz()
 --
 -- Run default forwarding rules for a DMZ
@@ -2669,6 +2687,7 @@ function TrustedStandAlone()
     RunCustomRules()
     RunProxyPorts()
     RunMasquerading()
+    RunStandaloneForwarding()
 end
 
 ------------------------------------------------------------------------------
@@ -2695,6 +2714,7 @@ function StandAlone()
     RunIncomingAllowedDefaults()
     RunProxyPorts()
     RunMasquerading()
+    RunStandaloneForwarding()
 end
 
 ------------------------------------------------------------------------------
