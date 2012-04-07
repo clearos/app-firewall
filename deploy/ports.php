@@ -64,4 +64,4 @@ $ports[] = array('special', 'ipv6-auth', '',  'IPsec');
 $ports[] = array('portrange',  'UDP', '137:138',  'NetBIOS');
 $ports[] = array('portrange',  'UDP', '5060:5061',  'SIP');
 $ports[] = array('portrange',  'UDP', '10000:20000', 'RTP');
-$ports[] = array('portrange',  'TCP', '65000:65999',  'Passive FTP');
+$ports[] = array('portrange',  'TCP', '60000:61000',  'Passive FTP');
