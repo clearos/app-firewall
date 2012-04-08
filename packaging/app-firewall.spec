@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 1.0.10
+Version: 1.0.15
 Release: 1%{dist}
 Summary: Firewall - APIs and install
 License: LGPLv3
