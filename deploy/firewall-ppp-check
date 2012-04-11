@@ -20,5 +20,4 @@ if [ -e "/etc/sysconfig/network-scripts/ifcfg-$1" ]; then
     [ -x /usr/sbin/dnsupdate ] && /usr/sbin/dnsupdate
 elif [ "$TYPE" == "pptp" ]; then
     logger -p local6.notice -t firewall "detected connection type - PPTP VPN"
-    /sbin/ifconfig $1 mtu 1500
 fi
