@@ -1,9 +1,9 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 1.0.15
+Version: 1.1.0
 Release: 1%{dist}
-Summary: Firewall - APIs and install
+Summary: Firewall - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Source: app-firewall-%{version}.tar.gz
@@ -13,7 +13,7 @@ Buildarch: noarch
 The core firewall engine for the system.
 
 %package core
-Summary: Firewall - APIs and install
+Summary: Firewall - Core
 Requires: app-base-core
 Requires: app-network-core
 Requires: csplugin-filewatch
