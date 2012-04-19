@@ -638,8 +638,11 @@ function RunIncomingAllowed()
         iptables("filter", "-A FORWARD --match mark --mark 100 -j " .. FW_ACCEPT)
 
         -- Do not masquerade VPN traffic
+        iptables("nat", "-A POSTROUTING -m policy --dir out --pol ipsec -j " .. FW_ACCEPT)
+
         if FW_MODE == "gateway" or FW_MODE == "dmz" then
             for _, ifn in pairs(GetUntrustedInterfaces(false)) do
+                -- FIXME: the next two lines are now useless, along with the above mark... I think.
                 iptables("nat", "-A POSTROUTING -o " .. ifn .. " -p esp -j " .. FW_ACCEPT)
                 iptables("nat", "-A POSTROUTING -o " .. ifn .. " -p ah -j " .. FW_ACCEPT)
             end
@@ -2361,6 +2364,7 @@ end
 
 function RunStandaloneForwarding()
     echo("Running default forwarding rules")
+    iptables("nat", "-I POSTROUTING -m policy --dir out --pol ipsec -j " .. FW_ACCEPT)
 
     iptables("filter", "-A FORWARD -i pptp+ -j " .. FW_ACCEPT)
     iptables("filter", "-A FORWARD -i tun+ -j " .. FW_ACCEPT)
