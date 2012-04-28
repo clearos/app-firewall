@@ -755,7 +755,7 @@ class Firewall extends Daemon
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
+        if (! preg_match('/^[a-zA-Z0-9_\-\.\/ ]*$/', $name))
             return lang('firewall_name_invalid');
     }
 

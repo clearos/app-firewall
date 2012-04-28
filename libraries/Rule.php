@@ -283,6 +283,11 @@ class Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
+        // For now, Replace / and space with underscore.
+        // These characters should be permitted in a future release.
+
+        $name = preg_replace('/[\/ ]/', '_', $name);
+
         Validation_Exception::is_valid($this->validate_name($name));
 
         $this->name = $name;
@@ -705,7 +710,7 @@ class Rule extends Engine
     {
         clearos_profile(__METHOD__, __LINE__);
 
-        if (! preg_match('/^[a-zA-Z0-9_\-\.]*$/', $name))
+        if (! preg_match('/^[a-zA-Z0-9_\-\.\/ ]*$/', $name))
             return lang('firewall_name_invalid');
     }
 
