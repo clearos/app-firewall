@@ -2578,6 +2578,8 @@ function RunMultipath()
             ifn, mark))
         iptables("mangle", string.format("-A POSTROUTING -o %s -j CONNMARK --set-mark 0x%04x",
             ifn, mark))
+        iptables("mangle", string.format("-A FORWARD -i %s -j CONNMARK --set-mark 0x%04x",
+            ifn, mark))
 
         -- TODO: This is a temporary fix for DMZ networks on MultiWAN systems.
         -- Because this is a hack, it will interfer with the bandwidth shaper!
