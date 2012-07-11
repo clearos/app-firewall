@@ -2481,7 +2481,7 @@ end
 function RunMultipath()
     local ifn
     local i
-    local t = 100
+    local t
     local mark = tonumber("0x8000")
     local hops = ""
     local ip
@@ -2508,6 +2508,25 @@ function RunMultipath()
         "while read PRIO RULE; do " .. IPBIN .. " rule del $RULE prio ${PRIO%%:*} 2>/dev/null; done")
     execute(IPBIN .. " route flush table 50")
 
+    -- Create default route tables for all external interfaces
+    -- regardless if they've been marked off-line by syswatch.
+    -- These rules are only matched if the source address matches that of the
+    -- external interface.
+    t = 200
+    for _, ifn in pairs(WANIF_CONFIG) do
+        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+
+        execute(string.format("%s route flush table %d", IPBIN, t))
+        execute(string.format("%s rule add prio %d from %s/%s table %d",
+            IPBIN, t, ip, prefix, t))
+        execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
+            IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
+        execute(string.format("%s route append prohibit default table %d metric 1 proto static",
+            IPBIN, t))
+
+        t = t + 1
+    end
+
     if MULTIPATH ~= "on" or table.getn(WANIF) < 2 then
         -- Flush cached routes so our changes will take effect
         execute(IPBIN .. " route flush cache")
@@ -2523,6 +2542,7 @@ function RunMultipath()
     execute(IPBIN .. " rule add prio 50 table 50")
 
     -- Create new marking rules
+    t = 100
     for _, ifn in pairs(WANIF) do
         execute(string.format("%s rule add prio %d fwmark 0x%04x table %d",
             IPBIN, t, mark, t))
@@ -2535,22 +2555,6 @@ function RunMultipath()
     mr_init = assert(loadfile("/usr/clearos/apps/firewall/deploy/libmultipath.lua"))
     mr_init()
     RunMultipathRouting()
-
-    -- Create new interface rules and tables
-    t = 200
-    for _, ifn in pairs(WANIF) do
-        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
-
-        execute(string.format("%s route flush table %d", IPBIN, t))
-        execute(string.format("%s rule add prio %d from %s/%s table %d",
-            IPBIN, t, ip, prefix, t))
-        execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
-            IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
-        execute(string.format("%s route append prohibit default table %d metric 1 proto static",
-            IPBIN, t))
-
-        t = t + 1
-    end
 
     -- Create multipath table
     t = 250
