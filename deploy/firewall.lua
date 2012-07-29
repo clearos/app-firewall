@@ -2513,18 +2513,20 @@ function RunMultipath()
     -- These rules are only matched if the source address matches that of the
     -- external interface.
     t = 200
-    for _, ifn in pairs(WANIF_CONFIG) do
-        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+    if table.getn(WANIF_CONFIG) > 1 then
+        for _, ifn in pairs(WANIF_CONFIG) do
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-        execute(string.format("%s route flush table %d", IPBIN, t))
-        execute(string.format("%s rule add prio %d from %s/%s table %d",
-            IPBIN, t, ip, prefix, t))
-        execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
-            IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
-        execute(string.format("%s route append prohibit default table %d metric 1 proto static",
-            IPBIN, t))
+            execute(string.format("%s route flush table %d", IPBIN, t))
+            execute(string.format("%s rule add prio %d from %s/%s table %d",
+                IPBIN, t, ip, prefix, t))
+            execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
+                IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
+            execute(string.format("%s route append prohibit default table %d metric 1 proto static",
+                IPBIN, t))
 
-        t = t + 1
+            t = t + 1
+        end
     end
 
     if MULTIPATH ~= "on" or table.getn(WANIF) < 2 then
