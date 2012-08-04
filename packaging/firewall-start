@@ -40,6 +40,7 @@ export FW_ADHOC=${FW_ADHOC:-"/etc/clearos/firewall.d/local"}
 export FW_CONF=${FW_CONF:-"/etc/clearos/firewall.conf"}
 export FW_CUSTOM=${FW_CUSTOM:-"/etc/clearos/firewall.d/custom"}
 export FW_TYPES="/etc/clearos/firewall.d/types"
+export FW_APP_RULES="$(find /etc/clearos/firewall.d -maxdepth 1 | egrep '/[0-9]+-*' | sort -t - -n)"
 export BANDWIDTH_CONF="/etc/clearos/bandwidth.conf"
 export MULTIWAN_CONF="/etc/clearos/multiwan.conf"
 export NETWORK_CONF="/etc/clearos/network.conf"
@@ -194,17 +195,21 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
 		# use -I to insert rules ahead of others if need be.
 		if [ -e $FW_CUSTOM ]; then
 			source $FW_CUSTOM || RC=1
-			/usr/bin/logger -p local6.notice -t firewall "========== start $FW_CUSTOM =========="
+			/usr/bin/logger -p local6.notice -t firewall "Running $FW_CUSTOM"
 			/usr/bin/logger -p local6.notice -t firewall -f $FW_CUSTOM
-			/usr/bin/logger -p local6.notice -t firewall "========== end $FW_CUSTOM =========="
 		fi
 
         if [ -e $FW_ADHOC ]; then
             source $FW_ADHOC || RC=1
-            /usr/bin/logger -p local6.notice -t firewall "========== start $FW_ADHOC =========="
+            /usr/bin/logger -p local6.notice -t firewall "Running $FW_ADHOC"
             /usr/bin/logger -p local6.notice -t firewall -f $FW_ADHOC
-            /usr/bin/logger -p local6.notice -t firewall "========== start $FW_ADHOC =========="
         fi
+
+        for FW_APP in $FW_APP_RULES; do
+            source $FW_APP || RC=1
+            /usr/bin/logger -p local6.notice -t firewall "Running $FW_APP"
+            /usr/bin/logger -p local6.notice -t firewall -f $FW_APP
+        done
 	else
 		RC=1
 		rm -f "$FW_LOCKFILE"
