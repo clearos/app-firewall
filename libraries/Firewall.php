@@ -419,7 +419,7 @@ class Firewall extends Daemon
 
         $parts = array();
         
-        if (eregi("RULES=\"([A-Z0-9|/_:.\\[:space:]-]*)\"", $conf, $parts) && strlen($parts[1])) {
+        if (preg_match("/RULES=\"([^\"]*)\"/", $conf, $parts) && strlen($parts[1])) {
             $value = trim(str_replace(array("\n", "\\", "\t"), " ", $parts[1]));
 
             while (strstr($value, '  '))
@@ -553,16 +553,12 @@ class Firewall extends Daemon
 
         $contents = $fw_conf->get_contents();
 
-        if (($conf = eregi_replace("RULES=\"[A-Z0-9|/_:.\\[:space:]-]*\"",
-            "RULES=\"\\\n$buffer\"", $contents))) {
+        $conf = preg_replace('/RULES="([^"]*)"/si', "RULES=\"\\\n$buffer\"", $contents);
 
-            $temp = new File("firewall", FALSE, TRUE);
-            $temp->add_lines("$conf\n");
+        $temp = new File("firewall", FALSE, TRUE);
+        $temp->add_lines("$conf\n");
 
-            $fw_conf->Replace($temp->get_filename());
-        } else {
-            throw new Engine_Exception(lang('firewall_configuration_invalid'));
-        }
+        $fw_conf->replace($temp->get_filename());
     }
 
     /**
@@ -642,21 +638,30 @@ class Firewall extends Daemon
 
         // TODO: IPv6...
 
-        if ( ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$", $address, $parts) &&
-            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)) return;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})$", $address, $parts) &&
-            ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)) return;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})/([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
-            $address, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
-            $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)) return;
-        else if (ereg("^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}):([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$",
-            $address, $parts) && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 &&
-            $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255))
-        {
-            list($lo, $hi) = explode(":", $address);
-            if (ip2long($lo) < ip2long($hi)) return;
+        if (preg_match('/^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$/', $address, $parts)
+            && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255)
+        ) {
+            return;
+        } else if (preg_match('/^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\\/([0-9]{1,3})$/', $address, $parts)
+            && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 && $parts[5] < 32 && $parts[5] >= 8)
+        ) {
+            return;
+        } else if (preg_match('/^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\\/([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$/', $address, $parts) 
+            && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255 
+            && $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)
+        ) {
+            return;
+        } else if (preg_match('/^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3}):([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$/', $address, $parts) 
+            && ($parts[1] <= 255 && $parts[2] <= 255 && $parts[3] <= 255 && $parts[4] <= 255
+            && $parts[5] <= 255 && $parts[6] <= 255 && $parts[7] <= 255 && $parts[8] <= 255)
+        ) {
+            list($lo, $hi) = explode(':', $address);
+
+            if (ip2long($lo) < ip2long($hi))
+                return;
+        } else if (preg_match('/^[A-Z0-9.-]*$/', $address)) {
+            return;
         }
-        else if (eregi("^[A-Z0-9.-]*$", $address)) return;
 
         return lang('firewall_address_invalid');
     }
