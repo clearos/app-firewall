@@ -659,7 +659,7 @@ class Firewall extends Daemon
 
             if (ip2long($lo) < ip2long($hi))
                 return;
-        } else if (preg_match('/^[A-Z0-9.-]*$/', $address)) {
+        } else if (preg_match('/^[a-zA-Z0-9.-]*$/', $address)) {
             return;
         }
 
