@@ -287,7 +287,6 @@ function LoadKernelModules()
     table.insert(modules, "ip_conntrack_pptp")
     -- IMQ for bandwidth QoS
     if BANDWIDTH_QOS == "on" then
-        table.insert(modules, "imq")
         table.insert(modules, "ipt_IMQ")
     end
 
@@ -1398,6 +1397,24 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- RunBandwidthEngine
+--
+------------------------------------------------------------------------------
+
+function RunBandwidthEngine()
+    if BANDWIDTH_QOS ~= "on" then return end
+    if BANDWIDTH_ENGINE == "internal" then
+        RunBandwidthInternal()
+    else
+        -- Start external QoS Manager
+        bwx_init = assert(loadfile(BANDWIDTH_ENGINE))
+        bwx_init()
+        RunBandwidthExternal()
+    end
+end
+
+------------------------------------------------------------------------------
+--
 -- AddBandwidthRule
 --
 ------------------------------------------------------------------------------
@@ -1497,11 +1514,11 @@ end
 
 ------------------------------------------------------------------------------
 --
--- RunBandwidthRules
+-- RunBandwidthInternal
 --
 ------------------------------------------------------------------------------
 
-function RunBandwidthRules()
+function RunBandwidthInternal()
     local ifn
     local ifn_wan
     local rule
@@ -1541,7 +1558,6 @@ function RunBandwidthRules()
     local WANIF_DOWNSTREAM_CBURST = {}
 
     -- Sanity checks
-    if BANDWIDTH_QOS ~= "on" then return end
     if table.getn(WANIF) == 0 then
         echo("No WAN interfaces up or configured, not starting bandwidth manager")
         return
@@ -2727,7 +2743,7 @@ function Gateway()
     RunIncomingAllowed()
     RunIncomingAllowedDefaults()
     RunPortForwardRules()
-    RunBandwidthRules()
+    RunBandwidthEngine()
     RunOneToOneNat()
     RunProxyPorts()
     RunMultipath()
@@ -2756,7 +2772,7 @@ function Bridge()
     SetPolicyToAccept()
     DefineChains()
     RunCustomRules()
-    RunBandwidthRules()
+    RunBandwidthEngine()
 end
 
 ------------------------------------------------------------------------------
@@ -2777,7 +2793,7 @@ function TrustedGateway()
     SetPolicyToAccept()
     DefineChains()
     RunCustomRules()
-    RunBandwidthRules()
+    RunBandwidthEngine()
     RunMultipath()
 end
 
@@ -2815,7 +2831,7 @@ function Dmz()
     RunIncomingAllowed()
     RunIncomingAllowedDefaults()
     RunPortForwardRules()
-    RunBandwidthRules()
+    RunBandwidthEngine()
     RunDmzPinhole()
     RunDmzIncoming()
     RunOneToOneNat()

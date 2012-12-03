@@ -217,6 +217,7 @@ function LoadEnvironment()
     DMZIF = os.getenv("DMZIF")
     WIFIF = os.getenv("WIFIF")
     BANDWIDTH_QOS = os.getenv("BANDWIDTH_QOS")
+    BANDWIDTH_ENGINE = os.getenv("BANDWIDTH_ENGINE")
     BANDWIDTH_UPSTREAM = os.getenv("BANDWIDTH_UPSTREAM")
     BANDWIDTH_UPSTREAM_BURST = os.getenv("BANDWIDTH_UPSTREAM_BURST")
     BANDWIDTH_UPSTREAM_CBURST = os.getenv("BANDWIDTH_UPSTREAM_CBURST")
@@ -335,6 +336,9 @@ function LoadEnvironment()
 
     if BANDWIDTH_QOS == nil then BANDWIDTH_QOS="off" end
     debug("BANDWIDTH_QOS=" .. BANDWIDTH_QOS)
+
+    if BANDWIDTH_ENGINE == nil then BANDWIDTH_ENGINE ="internal" end
+    debug("BANDWIDTH_ENGINE=" .. BANDWIDTH_ENGINE)
 
     if SQUID_USER_AUTHENTICATION == nil then SQUID_USER_AUTHENTICATION = "off" end
     debug("SQUID_USER_AUTHENTICATION=" .. SQUID_USER_AUTHENTICATION)
