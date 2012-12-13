@@ -460,14 +460,14 @@ end
 
 function GetInterfaceInfo(ifn)
     local ip = if_address(ifn)
-    local netmask = if_netmask(ifn)
+    local netmask = "255.255.255.255"
     local network = "0.0.0.0"
-    local prefix = 0
+    local prefix = 32
 
     if if_isppp(ifn) then
         network = if_dst_address(ifn)
-        prefix = 32
     else
+        netmask = if_netmask(ifn)
         if netmask == "255.255.255.255" then
             network = ip
         else

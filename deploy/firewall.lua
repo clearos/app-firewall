@@ -1403,6 +1403,12 @@ end
 
 function RunBandwidthEngine()
     if BANDWIDTH_QOS ~= "on" then return end
+    
+    if table.getn(WANIF) == 0 then
+        echo("No WAN interfaces up or configured, not starting bandwidth manager")
+        return
+    end
+
     if BANDWIDTH_ENGINE == "internal" then
         RunBandwidthInternal()
     else
@@ -1556,12 +1562,6 @@ function RunBandwidthInternal()
     local WANIF_DOWNSTREAM_BURST = {}
     local WANIF_UPSTREAM_CBURST = {}
     local WANIF_DOWNSTREAM_CBURST = {}
-
-    -- Sanity checks
-    if table.getn(WANIF) == 0 then
-        echo("No WAN interfaces up or configured, not starting bandwidth manager")
-        return
-    end
 
     echo("Initializing bandwidth manager")
 
