@@ -42,6 +42,7 @@ export FW_CUSTOM=${FW_CUSTOM:-"/etc/clearos/firewall.d/custom"}
 export FW_TYPES="/etc/clearos/firewall.d/types"
 export FW_APP_RULES="$(find /etc/clearos/firewall.d -maxdepth 1 | egrep '/[0-9]+-*' | sort -t - -n)"
 export BANDWIDTH_CONF="/etc/clearos/bandwidth.conf"
+export QOS_CONF="/etc/clearos/qos.conf"
 export MULTIWAN_CONF="/etc/clearos/multiwan.conf"
 export NETWORK_CONF="/etc/clearos/network.conf"
 export PROTOCOL_CONF="/etc/clearos/protocol_filter.conf"
@@ -85,6 +86,9 @@ source $FW_TYPES || exit 1
 # Pull in bandwidth configuration
 [ -e "$BANDWIDTH_CONF" ] && source $BANDWIDTH_CONF
 
+# Pull in QoS configuration
+[ -e "$QOS_CONF" ] && source $QOS_CONF
+
 # Pull in network configuration
 [ -e "$NETWORK_CONF" ] && source $NETWORK_CONF
 
@@ -115,14 +119,15 @@ else
 fi
 
 # Export firewall configuration
-export MODE EXTIF LANIF HOTIF DMZIF WIFIF \
-    BANDWIDTH_QOS BANDWIDTH_ENGINE BANDWIDTH_UPSTREAM \
+export MODE EXTIF LANIF HOTIF DMZIF WIFIF BANDWIDTH_QOS BANDWIDTH_UPSTREAM \
 	BANDWIDTH_UPSTREAM_BURST BANDWIDTH_UPSTREAM_CBURST BANDWIDTH_DOWNSTREAM \
 	BANDWIDTH_DOWNSTREAM_BURST BANDWIDTH_DOWNSTREAM_CBURST \
-    SQUID_TRANSPARENT SQUID_USER_AUTHENTICATION \
-    IPSEC_SERVER PPTP_SERVER PPTP_PASSTHROUGH_FORCE ONE_TO_ONE_NAT_MODE LANNET \
-    MULTIPATH MULTIPATH_WEIGHTS MULTIPATH_SKIP_DOWN_WANIF \
-    RULES FW_LOG_DROPS SYSWATCH_WANIF EGRESS_FILTERING PROTOCOL_FILTERING
+    QOS_ENABLE QOS_ENGINE QOS_UPSTREAM QOS_DOWNSTREAM \
+    QOS_PRIOMARK4 QOS_PRIOMARK6 QOS_PRIOMARK_CUSTOM \
+    SQUID_TRANSPARENT SQUID_USER_AUTHENTICATION IPSEC_SERVER PPTP_SERVER \
+	PPTP_PASSTHROUGH_FORCE ONE_TO_ONE_NAT_MODE LANNET MULTIPATH \
+	MULTIPATH_WEIGHTS RULES MULTIPATH_SKIP_DOWN_WANIF FW_LOG_DROPS \
+	SYSWATCH_WANIF EGRESS_FILTERING PROTOCOL_FILTERING
 
 # Panic mode rules.  If the firewall fails, then we run these rules to ensure
 # we have something sane configured.

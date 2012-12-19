@@ -286,7 +286,7 @@ function LoadKernelModules()
     table.insert(modules, "ip_conntrack_proto_gre")
     table.insert(modules, "ip_conntrack_pptp")
     -- IMQ for bandwidth QoS
-    if BANDWIDTH_QOS == "on" then
+    if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
         table.insert(modules, "ipt_IMQ")
     end
 
@@ -1402,18 +1402,20 @@ end
 ------------------------------------------------------------------------------
 
 function RunBandwidthEngine()
-    if BANDWIDTH_QOS ~= "on" then return end
-    
-    if table.getn(WANIF) == 0 then
-        echo("No WAN interfaces up or configured, not starting bandwidth manager")
-        return
+    if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
+        if table.getn(WANIF) == 0 then
+            echo("No WAN interfaces up or configured, not starting bandwidth manager")
+            return
+        end
     end
 
-    if BANDWIDTH_ENGINE == "internal" then
+    if QOS_ENGINE == "internal" then
+        if BANDWIDTH_QOS ~= "on" then return end
         RunBandwidthInternal()
     else
+        if QOS_ENABLE ~= "on" then return end
         -- Start external QoS Manager
-        bwx_init = assert(loadfile(BANDWIDTH_ENGINE))
+        bwx_init = assert(loadfile(QOS_ENGINE))
         bwx_init()
         RunBandwidthExternal()
     end

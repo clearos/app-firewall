@@ -211,40 +211,58 @@ function LoadEnvironment()
     -- Exported firewall configuration variables 
     FW_MODE = os.getenv("MODE")
     FW_ADHOC = os.getenv("FW_ADHOC")
+
     WANIF = os.getenv("EXTIF")
+    SYSWATCH_WANIF = os.getenv("SYSWATCH_WANIF")
     LANIF = os.getenv("LANIF")
     HOTIF = os.getenv("HOTIF")
     DMZIF = os.getenv("DMZIF")
     WIFIF = os.getenv("WIFIF")
+
     BANDWIDTH_QOS = os.getenv("BANDWIDTH_QOS")
-    BANDWIDTH_ENGINE = os.getenv("BANDWIDTH_ENGINE")
     BANDWIDTH_UPSTREAM = os.getenv("BANDWIDTH_UPSTREAM")
     BANDWIDTH_UPSTREAM_BURST = os.getenv("BANDWIDTH_UPSTREAM_BURST")
     BANDWIDTH_UPSTREAM_CBURST = os.getenv("BANDWIDTH_UPSTREAM_CBURST")
     BANDWIDTH_DOWNSTREAM = os.getenv("BANDWIDTH_DOWNSTREAM")
     BANDWIDTH_DOWNSTREAM_BURST = os.getenv("BANDWIDTH_DOWNSTREAM_BURST")
     BANDWIDTH_DOWNSTREAM_CBURST = os.getenv("BANDWIDTH_DOWNSTREAM_CBURST")
+
+    QOS_ENABLE = os.getenv("QOS_ENABLE")
+    QOS_ENGINE = os.getenv("QOS_ENGINE")
+    QOS_UPSTREAM = os.getenv("QOS_UPSTREAM")
+    QOS_DOWNSTREAM = os.getenv("QOS_DOWNSTREAM")
+    QOS_PRIOMARK4 = os.getenv("QOS_PRIOMARK4")
+    QOS_PRIOMARK6 = os.getenv("QOS_PRIOMARK6")
+    QOS_PRIOMARK_CUSTOM = os.getenv("QOS_PRIOMARK_CUSTOM")
+
     SQUID_USER_AUTHENTICATION = os.getenv("SQUID_USER_AUTHENTICATION")
     SQUID_TRANSPARENT = os.getenv("SQUID_TRANSPARENT")
+
     IPSEC_SERVER = os.getenv("IPSEC_SERVER")
     PPTP_SERVER = os.getenv("PPTP_SERVER")
+    PPTP_PASSTHROUGH_FORCE = os.getenv("PPTP_PASSTHROUGH_FORCE")
+
     ONE_TO_ONE_NAT_MODE = os.getenv("ONE_TO_ONE_NAT_MODE")
+
     MULTIPATH = os.getenv("MULTIPATH")
     MULTIPATH_WEIGHTS = os.getenv("MULTIPATH_WEIGHTS")
     MULTIPATH_SKIP_DOWN_WANIF = os.getenv("MULTIPATH_SKIP_DOWN_WANIF")
+
     RULES = os.getenv("RULES")
+
     GATEWAYDEV = os.getenv("GATEWAYDEV")
+
+    FW_ACCEPT = os.getenv("FW_ACCEPT")
     FW_DROP = os.getenv("FW_DROP")
     FW_LOG_DROPS = os.getenv("FW_LOG_DROPS")
-    FW_ACCEPT = os.getenv("FW_ACCEPT")
+
+    IFCONFIG = os.getenv("IFCONFIG")
     IPBIN = os.getenv("IPBIN")
-    TCBIN = os.getenv("TCBIN")
     MODPROBE = os.getenv("MODPROBE")
     RMMOD = os.getenv("RMMOD")
     SYSCTL = os.getenv("SYSCTL")
-    IFCONFIG = os.getenv("IFCONFIG")
-    PPTP_PASSTHROUGH_FORCE = os.getenv("PPTP_PASSTHROUGH_FORCE")
-    SYSWATCH_WANIF = os.getenv("SYSWATCH_WANIF")
+    TCBIN = os.getenv("TCBIN")
+
     EGRESS_FILTERING = os.getenv("EGRESS_FILTERING")
     PROTOCOL_FILTERING = os.getenv("PROTOCOL_FILTERING")
 
@@ -337,8 +355,8 @@ function LoadEnvironment()
     if BANDWIDTH_QOS == nil then BANDWIDTH_QOS="off" end
     debug("BANDWIDTH_QOS=" .. BANDWIDTH_QOS)
 
-    if BANDWIDTH_ENGINE == nil then BANDWIDTH_ENGINE ="internal" end
-    debug("BANDWIDTH_ENGINE=" .. BANDWIDTH_ENGINE)
+    if QOS_ENGINE == nil then QOS_ENGINE ="internal" end
+    debug("QOS_ENGINE=" .. QOS_ENGINE)
 
     if SQUID_USER_AUTHENTICATION == nil then SQUID_USER_AUTHENTICATION = "off" end
     debug("SQUID_USER_AUTHENTICATION=" .. SQUID_USER_AUTHENTICATION)
