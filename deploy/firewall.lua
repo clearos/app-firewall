@@ -615,6 +615,27 @@ function RunIncomingAllowed()
                 string.format("-A OUTPUT -o %s -s %s -p 51 -j %s", ifn, if_address(ifn), FW_ACCEPT))
         end
 
+        -- Mark all incoming encrypted packets
+        iptables("mangle", "-A PREROUTING -p esp -j MARK --set-mark 100")
+
+        -- Direct un-encrypted (already authenticated) packets to the proper
+        -- chain.  Packets destined for this box on any interface (LAN, WAN)
+        -- are allowed.
+        for _, ifn in pairs(GetUntrustedInterfaces(false)) do
+            iptables("filter",
+                string.format("-A INPUT -d %s --match mark --mark 100 -j %s", if_address(ifn), FW_ACCEPT))
+        end
+
+        for _, ifn in pairs(LANIF) do
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+
+            iptables("filter",
+                string.format("-A INPUT -d %s --match mark --mark 100 -j %s", ip, FW_ACCEPT))
+        end 
+
+        -- Packets destined for the LAN are allowed
+        iptables("filter", "-A FORWARD --match mark --mark 100 -j " .. FW_ACCEPT)
+
         -- Do not masquerade VPN traffic
         iptables("nat", "-A POSTROUTING -m policy --dir out --pol ipsec -j " .. FW_ACCEPT)
 
