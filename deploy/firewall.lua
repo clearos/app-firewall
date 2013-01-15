@@ -1423,6 +1423,18 @@ end
 ------------------------------------------------------------------------------
 
 function RunBandwidthEngine()
+    local ifn
+
+    -- Bring down all IMQ interfaces
+    for _, ifn in pairs(if_list()) do
+        if string.find(ifn, "^imq[0-9]") then
+            execute(IPBIN .. " link set " .. ifn .. " down 2>/dev/null")
+        end
+    end
+
+    -- Remove IMQ module
+    execute(RMMOD .. " imq 2>/dev/null");
+
     if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
         if table.getn(WANIF) == 0 then
             echo("No WAN interfaces up or configured, not starting bandwidth manager")
@@ -1603,14 +1615,7 @@ function RunBandwidthInternal()
     end
 
     debug("Creating " .. imq_devs .. " IMQ interface(s)...")
-    -- XXX: This is a hack.  For some reason, only after a fresh boot, we have to
-    -- reload the imq kernel module to get the imqX hooks working... rather worrisome.
-    if execute(string.format("%s %s >/dev/null 2>&1", RMMOD, "imq")) == 0 then
-        execute(string.format("%s %s numdevs=%d >/dev/null 2>&1", MODPROBE, "imq", imq_devs))
-        if execute(string.format("%s %s >/dev/null 2>&1", RMMOD, "imq")) == 0 then
-            execute(string.format("%s %s numdevs=%d >/dev/null 2>&1", MODPROBE, "imq", imq_devs))
-        end
-    end
+    execute(string.format("%s %s numdevs=%d >/dev/null 2>&1", MODPROBE, "imq", imq_devs))
 
     __ = 0
     for ifn, _ in pairs(WANIF_UPSTREAM) do
