@@ -192,8 +192,8 @@ class Firewall extends Daemon
             self::PROTOCOL_IP => 'IP',
             self::PROTOCOL_TCP => 'TCP',
             self::PROTOCOL_UDP => 'UDP',
-            self::PROTOCOL_GRE => 'UDP',
-            self::PROTOCOL_ESP => 'UDP',
+            self::PROTOCOL_GRE => 'GRE',
+            self::PROTOCOL_ESP => 'ESP',
             self::PROTOCOL_AH => 'AH',
         );
 
