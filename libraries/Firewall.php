@@ -301,318 +301,6 @@ class Firewall extends Daemon
 
         return $protocol_number;
     }
-    /**
-     * Adds firewall rule.
-     *
-     * @param object $val Rule object
-     *
-     * @return void
-     * @throws Engine_Exception
-     */
-
-    protected function add_rule($val)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $val->get_rule();
-        $rules = $this->get_rules();
-
-        foreach($rules as $rule)
-        {
-            if ($val->is_equal($rule))
-                throw new Rule_Already_Exists_Exception();
-        }
-
-        $rules[] = $val;
-
-        $this->set_rules($rules);
-    }
-
-    /**
-     * Deletes firewall rule.
-     *
-     * @param object $val Rule object
-     *
-     * @return void
-     * @throws Engine_Exception
-     */
-
-    protected function delete_rule($val)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $val->get_rule();
-        $old_rules = $this->get_rules();
-
-        $exists = FALSE;
-        $new_rules = array();
-
-        foreach ($old_rules as $rule) {
-            if (!$val->is_equal($rule)) {
-                $new_rules[] = $rule;
-                continue;
-            }
-
-            $exists = TRUE;
-        }
-
-        if (!$exists)
-            throw new Engine_Exception(lang('firewall_rule_not_found'));
-
-        $this->set_rules($new_rules);
-    }
-
-    /**
-     * Finds firewall rule.
-     *
-     * @param object $val Rule object
-     *
-     * @return object firewall rule
-     */
-
-    protected function find_rule($val)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $rules = $this->get_rules();
-
-        foreach ($rules as $rule) {
-            if ($val->is_equal($rule))
-                return $rule;
-        }
-
-        return NULL;
-    }
-
-    /**
-     * Returns the ports list.
-     *
-     * @return array list of pre-defined ports
-     * @throws Engine_Exception
-     */
-
-    protected function get_ports_list()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $metadata = new Metadata();
-        
-        return $metadata->get_ports_list();
-    }
-
-    /**
-     * Get array of firewall rules.
-     *
-     *
-     * @return array rules Rule objects
-     * @throws Engine_Exception
-     */
-
-    protected function get_rules()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $rules = array();
-
-        $file = new File(Firewall::FILE_CONFIG);
-        $conf = $file->get_contents();
-
-        $parts = array();
-        
-        if (preg_match("/RULES=\"([^\"]*)\"/", $conf, $parts) && strlen($parts[1])) {
-            $value = trim(str_replace(array("\n", "\\", "\t"), " ", $parts[1]));
-
-            while (strstr($value, '  '))
-                $value = str_replace('  ', ' ', $value);
-
-            if (!strlen($value))
-                return $rules;
-
-            foreach (explode(" ", $value) as $rule) {
-                $fwr = new Rule();
-
-                try {
-                    $fwr->set_rule($rule);
-                } catch (Firewall_Invalid_Rule_Exception $e) {
-                    continue;
-                }
-
-                $rules[] = $fwr;
-            }
-        }
-
-        return $rules;
-    }
-
-    /**
-     * Generic get state for a on/off key.
-     *
-     * @param string key key for the list
-     *
-     * @return boolean state of the key
-     * @throws Engine_Exception
-     */
-
-    protected function get_state($key)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $file = new File(Firewall::FILE_CONFIG);
-
-        try {
-            $retval = $file->lookup_value("/^$key=/");
-        } catch (File_No_Match_Exception $e) {
-            return FALSE;
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), COMMON_WARNING);
-        }
-
-        $retval = preg_replace("/\"/", "", $retval);
-
-        if (!$retval || ($retval == Firewall::CONSTANT_OFF)) {
-            return FALSE;
-        } else if ($retval == Firewall::CONSTANT_ON)
-            return TRUE;
-
-        return FALSE;
-    }
-
-    /**
-     * Generic get value for a key.
-     *
-     * @param string key key for the list
-     *
-     * @return string value of the key
-     * @throws Engine_Exception
-     */
-
-    protected function get_value($key)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $file = new File(Firewall::FILE_CONFIG);
-
-        try {
-            $retval = $file->lookup_value("/^$key=/");
-        } catch (File_No_Match_Exception $e) {
-            return NULL;
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), COMMON_WARNING);
-        }
-
-        $retval = preg_replace("/\"/", "", $retval);
-        $retval = preg_replace("/\s.*/", "", $retval);
-
-        return $retval;
-    }
-
-    /**
-     * Returns the service defined by the given port/protocol.
-     *
-     * @param string  $protocol protocol
-     * @param integer $port     port
-     *
-     * @return string service
-     * @throws Engine_Exception, Validation_Exception
-     */
-
-    protected function lookup_service($protocol, $port)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $metadata = new Metadata();
-        
-        return $metadata->lookup_service($protocol, $port);
-    }
-
-    /**
-     * Set firewall rules from array.
-     *
-     * @param array array of Rule objects
-     *
-     * @return void
-     * @throws Engine_Exception
-     */
-
-    protected function set_rules($rules)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $buffer = "";
-        sort($rules);
-
-        foreach ($rules as $rule) {
-            $value = "";
-            $value = $rule->get_rule();
-
-            $buffer .= sprintf("\t%s \\\n", $value);
-        }
-
-        $contents = NULL;
-        $fw_conf = new File(Firewall::FILE_CONFIG);
-
-        $contents = $fw_conf->get_contents();
-
-        $conf = preg_replace('/RULES="([^"]*)"/si', "RULES=\"\\\n$buffer\"", $contents);
-
-        $temp = new File("firewall", FALSE, TRUE);
-        $temp->add_lines("$conf\n");
-
-        $fw_conf->replace($temp->get_filename());
-    }
-
-    /**
-     * Generic set state for a on/off key.
-     *
-     * @param boolean $state state TRUE or FALSE
-     * @param string $key key value of the key
-     * @throws Engine_Exception
-     */
-
-    protected function set_state($state, $key)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        // Update tag if it exists
-        //------------------------
-
-        if ($state)
-            $flag = Firewall::CONSTANT_ON;
-        else
-            $flag = Firewall::CONSTANT_OFF;
-
-        $file = new File(Firewall::FILE_CONFIG);
-
-        try {
-            $match = $file->replace_lines("/^$key=/", "$key=\"$flag\"\n");
-            if (! $match)
-                $file->add_lines_after("$key=\"$flag\"\n", "/^[^#]/");
-        } catch (Exception $e) {
-            throw new Engine_Exception(clearos_exception_message($e), COMMON_WARNING);
-        }
-    }
-
-    /**
-     * Generic set for a miscelleanous value.
-     *
-     * @param string $value value of the key
-     * @param string $key key name
-     *
-     * @return void
-     * @throws Engine_Exception
-     */
-
-    protected function set_value($value, $key)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        $file = new File(Firewall::FILE_CONFIG);
-
-        $match = $file->replace_lines("/^$key=/", "$key=\"$value\"\n");
-
-        if (! $match)
-            $file->add_lines_after("$key=\"$value\"\n", "/^[^#]/");
-    }
 
     ///////////////////////////////////////////////////////////////////////////
     // V A L I D A T I O N   R O U T I N E S
@@ -669,7 +357,7 @@ class Firewall extends Daemon
     /**
      * Validation routine for IPs
      *
-     * @param string ip IP address
+     * @param string $ip IP address
      *
      * @return error message if IP is invalid
      */
@@ -683,33 +371,9 @@ class Firewall extends Daemon
     }
 
     /**
-     * Validation routine for firewall mode.
-     *
-     * @param string mode Firewall mode
-     *
-     * @return boolean TRUE if mode is valid
-     */
-
-    public function is_valid_mode($mode)
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        switch($mode) {
-            case Firewall::MODE_GATEWAY:
-            case Firewall::MODE_STANDALONE:
-            case Firewall::MODE_TRUSTED_STANDALONE:
-            case Firewall::MODE_TRUSTED_GATEWAY:
-            case Firewall::MODE_BRIDGE:
-            return TRUE;
-        }
-
-        return FALSE;
-    }
-
-    /**
      * Validation routine for network interface name.
      *
-     * @param string $name network interface name.
+     * @param string $interface network interface name.
      *
      * @return string error message if network interface name is invalid
      */
@@ -767,7 +431,7 @@ class Firewall extends Daemon
     /**
      * Validation routine for integer port address.
      *
-     * @param int port Numeric port address
+     * @param integer $port numeric port address
      *
      * @return boolean TRUE if port is valid
      */
@@ -801,8 +465,8 @@ class Firewall extends Daemon
     /**
      * Validation routine for integer port range
      *
-     * @param int from Low port address
-     * @param int to High port address
+     * @param integer $from low port address
+     * @param integer $to   high port address
      *
      * @return boolean TRUE if port range is valid
      */
@@ -851,5 +515,271 @@ class Firewall extends Daemon
 
         if (! Metadata::is_valid_service($service))
             return lang('firewall_standard_service_invalid');
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // P R I V A T E  M E T H O D S
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Adds firewall rule.
+     *
+     * @param object $val Rule object
+     *
+     * @return void
+     * @throws Engine_Exception
+     */
+
+    protected function _add_rule($val)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $val->get_rule();
+        $rules = $this->_get_rules();
+
+        foreach ($rules as $rule) {
+            if ($val->is_equal($rule))
+                throw new Rule_Already_Exists_Exception();
+        }
+
+        $rules[] = $val;
+
+        $this->_set_rules($rules);
+    }
+
+    /**
+     * Deletes firewall rule.
+     *
+     * @param object $val Rule object
+     *
+     * @return void
+     * @throws Engine_Exception
+     */
+
+    protected function _delete_rule($val)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $val->get_rule();
+        $old_rules = $this->_get_rules();
+
+        $exists = FALSE;
+        $new_rules = array();
+
+        foreach ($old_rules as $rule) {
+            if (!$val->is_equal($rule)) {
+                $new_rules[] = $rule;
+                continue;
+            }
+
+            $exists = TRUE;
+        }
+
+        if (!$exists)
+            throw new Engine_Exception(lang('firewall_rule_not_found'));
+
+        $this->_set_rules($new_rules);
+    }
+
+    /**
+     * Finds firewall rule.
+     *
+     * @param object $val Rule object
+     *
+     * @return object firewall rule
+     */
+
+    protected function _find_rule($val)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $rules = $this->_get_rules();
+
+        foreach ($rules as $rule) {
+            if ($val->is_equal($rule))
+                return $rule;
+        }
+
+        return NULL;
+    }
+
+    /**
+     * Returns the ports list.
+     *
+     * @return array list of pre-defined ports
+     * @throws Engine_Exception
+     */
+
+    protected function _get_ports_list()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $metadata = new Metadata();
+        
+        return $metadata->get_ports_list();
+    }
+
+    /**
+     * Get array of firewall rules.
+     *
+     * @return array rules Rule objects
+     * @throws Engine_Exception
+     */
+
+    protected function _get_rules()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $rules = array();
+
+        $file = new File(Firewall::FILE_CONFIG);
+        $conf = $file->get_contents();
+
+        $parts = array();
+        
+        if (preg_match("/RULES=\"([^\"]*)\"/", $conf, $parts) && strlen($parts[1])) {
+            $value = trim(str_replace(array("\n", "\\", "\t"), " ", $parts[1]));
+
+            while (strstr($value, '  '))
+                $value = str_replace('  ', ' ', $value);
+
+            if (!strlen($value))
+                return $rules;
+
+            foreach (explode(" ", $value) as $rule) {
+                $fwr = new Rule();
+
+                try {
+                    $fwr->set_rule($rule);
+                } catch (Firewall_Invalid_Rule_Exception $e) {
+                    continue;
+                }
+
+                $rules[] = $fwr;
+            }
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Generic get state for a on/off key.
+     *
+     * @param string $key key for the list
+     *
+     * @return boolean state of the key
+     * @throws Engine_Exception
+     */
+
+    protected function _get_state($key)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $file = new File(Firewall::FILE_CONFIG);
+
+        try {
+            $retval = $file->lookup_value("/^$key=/");
+        } catch (File_No_Match_Exception $e) {
+            return FALSE;
+        } catch (Exception $e) {
+            throw new Engine_Exception(clearos_exception_message($e), COMMON_WARNING);
+        }
+
+        $retval = preg_replace("/\"/", "", $retval);
+
+        if (!$retval || ($retval == Firewall::CONSTANT_OFF)) {
+            return FALSE;
+        } else if ($retval == Firewall::CONSTANT_ON)
+            return TRUE;
+
+        return FALSE;
+    }
+
+    /**
+     * Returns the service defined by the given port/protocol.
+     *
+     * @param string  $protocol protocol
+     * @param integer $port     port
+     *
+     * @return string service
+     * @throws Engine_Exception, Validation_Exception
+     */
+
+    protected function _lookup_service($protocol, $port)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $metadata = new Metadata();
+        
+        return $metadata->lookup_service($protocol, $port);
+    }
+
+    /**
+     * Set firewall rules from array.
+     *
+     * @param array $rules array of rule objects
+     *
+     * @return void
+     * @throws Engine_Exception
+     */
+
+    protected function _set_rules($rules)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $buffer = "";
+        sort($rules);
+
+        foreach ($rules as $rule) {
+            $value = "";
+            $value = $rule->get_rule();
+
+            $buffer .= sprintf("\t%s \\\n", $value);
+        }
+
+        $contents = NULL;
+        $fw_conf = new File(Firewall::FILE_CONFIG);
+
+        $contents = $fw_conf->get_contents();
+
+        $conf = preg_replace('/RULES="([^"]*)"/si', "RULES=\"\\\n$buffer\"", $contents);
+
+        $temp = new File("firewall", FALSE, TRUE);
+        $temp->add_lines("$conf\n");
+
+        $fw_conf->replace($temp->get_filename());
+    }
+
+    /**
+     * Generic set state for a on/off key.
+     *
+     * @param boolean $state state TRUE or FALSE
+     * @param string  $key   key value of the key
+     *
+     * @return void
+     * @throws Engine_Exception
+     */
+
+    protected function _set_state($state, $key)
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        // Update tag if it exists
+        //------------------------
+
+        if ($state)
+            $flag = Firewall::CONSTANT_ON;
+        else
+            $flag = Firewall::CONSTANT_OFF;
+
+        $file = new File(Firewall::FILE_CONFIG);
+
+        try {
+            $match = $file->replace_lines("/^$key=/", "$key=\"$flag\"\n");
+            if (! $match)
+                $file->add_lines_after("$key=\"$flag\"\n", "/^[^#]/");
+        } catch (Exception $e) {
+            throw new Engine_Exception(clearos_exception_message($e), COMMON_WARNING);
+        }
     }
 }

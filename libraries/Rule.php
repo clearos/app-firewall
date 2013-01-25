@@ -7,7 +7,7 @@
  * @package    Firewall
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2004-2011 ClearFoundation
+ * @copyright  2004-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
@@ -89,7 +89,7 @@ clearos_load_library('firewall/Firewall_Invalid_Rule_Exception');
  * @package    Firewall
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2004-2011 ClearFoundation
+ * @copyright  2004-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
@@ -149,6 +149,10 @@ class Rule extends Engine
     // M E T H O D S
     ///////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Firewall rule constructor.
+     */
+
     public function __construct()
     {
         clearos_profile(__METHOD__, __LINE__);
@@ -191,13 +195,11 @@ class Rule extends Engine
         $rule = new Rule();
 
         // Validate member data
-        $rule->set_rule(sprintf("%s|%s|0x%08x|%d|%s|%s|%s",
-            $this->name, $this->group, $this->flags, $this->proto,
-            $this->addr, $this->port, $this->param));
+        $rule->set_rule(
+            sprintf("%s|%s|0x%08x|%d|%s|%s|%s", $this->name, $this->group, $this->flags, $this->proto, $this->addr, $this->port, $this->param)
+        );
 
-        return sprintf("%s|%s|0x%08x|%d|%s|%s|%s",
-            $this->name, $this->group, $this->flags,
-            $this->proto, $this->addr, $this->port, $this->param);
+        return sprintf("%s|%s|0x%08x|%d|%s|%s|%s", $this->name, $this->group, $this->flags, $this->proto, $this->addr, $this->port, $this->param);
     }
 
     /**
@@ -260,7 +262,6 @@ class Rule extends Engine
     /**
      * Get rule name.
      *
-     *
      * @return string Rule name
      */
 
@@ -321,64 +322,6 @@ class Rule extends Engine
         Validation_Exception::is_valid($this->validate_group($group));
 
         $this->group = $group;
-    }
-
-    /**
-     * Returns type description.
-     *
-     * @return string a description of the type of rule
-     */
-
-    public function get_type_text()
-    {
-        clearos_profile(__METHOD__, __LINE__);
-
-        // TODO: This is a temporary workaround - an end user will see 
-        // something that makes sense for "outgoing" rules when egress mode
-        // is enabled.
-
-        $egressstate = FALSE;
-
-        if (file_exists(COMMON_CORE_DIR . "/api/FirewallOutgoing.class.php")) {
-            require_once(COMMON_CORE_DIR . "/api/FirewallOutgoing.class.php");
-            $outgoingfw = new FirewallOutgoing();
-            $egressstate = $outgoingfw->GetEgressState();
-        }
-
-        if ($this->flags & Rule::INCOMING_ALLOW)
-            $type = FIREWALLRULE_LANG_TYPE_INCOMING_ALLOW;
-        else if ($this->flags & Rule::INCOMING_BLOCK)
-            $type = FIREWALLRULE_LANG_TYPE_INCOMING_BLOCK;
-        else if ($this->flags & Rule::OUTGOING_BLOCK)
-            $type = ($egressstate) ? FIREWALLRULE_LANG_TYPE_OUTGOING_ALLOW : FIREWALLRULE_LANG_TYPE_OUTGOING_BLOCK;
-        else if ($this->flags & Rule::FORWARD)
-            $type = FIREWALLRULE_LANG_TYPE_PORT_FORWARD;
-        else if ($this->flags & Rule::DMZ_PINHOLE)
-            $type = FIREWALLRULE_LANG_TYPE_DMZ_PINHOLE;
-        else if ($this->flags & Rule::DMZ_INCOMING)
-            $type = FIREWALLRULE_LANG_TYPE_DMZ_INCOMING;
-        else if ($this->flags & Rule::ONE_TO_ONE)
-            $type = FIREWALLRULE_LANG_TYPE_ONE_TO_ONE_NAT;
-        else if ($this->flags & Rule::PPTP_FORWARD)
-            $type = FIREWALLRULE_LANG_TYPE_PORT_FORWARD;
-        else if ($this->flags & Rule::MAC_FILTER)
-            $type = FIREWALLRULE_LANG_TYPE_MAC_FILTER_ALLOW;
-        else if ($this->flags & Rule::SBR_PORT)
-            $type = FIREWALLRULE_LANG_TYPE_MULTIWAN_SOURCE_BASE_ROUTE;
-        else if ($this->flags & Rule::SBR_HOST)
-            $type = FIREWALLRULE_LANG_TYPE_MULTIWAN_DESTINATION_PORT;
-        else if ($this->flags & Rule::BANDWIDTH_RATE)
-            $type = FIREWALLRULE_LANG_TYPE_BANDWIDTH;
-        else if ($this->flags & Rule::BANDWIDTH_PRIO)
-            $type = FIREWALLRULE_LANG_TYPE_BANDWIDTH;
-        else if ($this->flags & Rule::PROXY_BYPASS)
-            $type = FIREWALLRULE_LANG_TYPE_PROXY_BYPASS;
-        else if ($this->flags & Rule::L7FILTER_BYPASS)
-            $type = FIREWALLRULE_LANG_TYPE_L7FILTER_BYPASS;
-        else
-            $type = LOCALE_LANG_UNKNOWN;
-
-        return $type;
     }
 
     /**
@@ -509,7 +452,7 @@ class Rule extends Engine
     /**
      * Get rule address.
      *
-     * return string address Rule address
+     * @return string address Rule address
      */
 
     public function get_address()
@@ -819,7 +762,7 @@ class Rule extends Engine
      * TODO: network validation should be moved to IsValidNetwork
      * TODO: this class should extend Network() and use the standard validation
      *
-     * @param string $ip hostname, IPv4 address to validate
+     * @param string $address hostname, IPv4 address to validate
      *
      * @return error message if address is invalid
      */

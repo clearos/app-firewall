@@ -7,7 +7,7 @@
  * @package    Firewall
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2004-2011 ClearFoundation
+ * @copyright  2004-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
@@ -67,7 +67,7 @@ clearos_load_library('base/Engine_Exception');
  * @package    Firewall
  * @subpackage Libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
- * @copyright  2004-2011 ClearFoundation
+ * @copyright  2004-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
  * @link       http://www.clearfoundation.com/docs/developer/apps/firewall/
  */
@@ -76,12 +76,10 @@ class Firewall_Invalid_Rule_Exception extends Engine_Exception
 {
     /**
      * Firewall_Invalid_Rule_Exception constructor.
-     *
-     * @param string  $reason error message
      */
 
-    public function __construct($reason, $code)
+    public function __construct()
     {
-        parent::__construct(lang('firewall_rule_invalid:' . " $reason"));
+        parent::__construct(lang('firewall_rule_invalid'));
     }
 }
