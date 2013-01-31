@@ -40,12 +40,12 @@ $app['core_requires'] = array(
 );
 
 $app['core_directory_manifest'] = array(
-   '/var/clearos/firewall' => array(),
-   '/etc/clearos/firewall.d' => array(),
+    '/var/clearos/firewall' => array(),
+    '/etc/clearos/firewall.d' => array(),
 );
 
 $app['core_file_manifest'] = array(
-   'local' => array(
+    'local' => array(
         'target' => '/etc/clearos/firewall.d/local',
         'mode' => '0755',
         'owner' => 'root',
@@ -53,7 +53,7 @@ $app['core_file_manifest'] = array(
         'config' => TRUE,
         'config_params' => 'noreplace',
     ),
-   'firewall.conf' => array(
+    'firewall.conf' => array(
         'target' => '/etc/clearos/firewall.conf',
         'mode' => '0644',
         'owner' => 'root',
@@ -61,25 +61,25 @@ $app['core_file_manifest'] = array(
         'config' => TRUE,
         'config_params' => 'noreplace',
     ),
-   'firewall.init' => array(
+    'firewall.init' => array(
         'target' => '/etc/rc.d/init.d/firewall',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
     ),
-   'firewall-start' => array(
+    'firewall-start' => array(
         'target' => '/usr/sbin/firewall-start',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
     ),
-   'snortsam-reblock' => array(
+    'snortsam-reblock' => array(
         'target' => '/usr/sbin/snortsam-reblock',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
     ),
-   'types' => array(
+    'types' => array(
         'target' => '/etc/clearos/firewall.d/types',
         'mode' => '0755',
         'owner' => 'root',
