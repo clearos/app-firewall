@@ -320,6 +320,8 @@ function LoadNatKernelModules()
     table.insert(modules, "ip_nat_pptp")
     -- H323
     table.insert(modules, "ip_nat_h323")
+    -- TFTP
+    table.insert(modules, "ip_nat_tftp")
 
     for _, m in pairs(modules) do
         execute(string.format("%s %s >/dev/null 2>&1", MODPROBE, m))
