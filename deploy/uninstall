@@ -1,0 +1,6 @@
+#!/bin/sh
+
+if [ -e /var/clearos/firewall/invalid.state ]; then
+    logger -p local6.notice -t installer "app-firewall-core - removing state file"
+    rm -f /var/clearos/firewall/invalid.state
+fi
