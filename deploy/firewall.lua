@@ -1028,6 +1028,7 @@ function RunProxyPorts()
                 echo("Enabling web proxy bypass for host: " .. r_addr)
 
                 iptables("nat", "-A PREROUTING -p tcp -d " .. r_addr .. " --dport 80 -j " .. FW_ACCEPT)
+                iptables("nat", "-A PREROUTING -p tcp -s " .. r_addr .. " --dport 80 -j " .. FW_ACCEPT)
             end
         end
 
@@ -1074,6 +1075,7 @@ function RunProxyPorts()
                 echo("Enabling web proxy bypass for host: " .. r_addr)
 
                 iptables("nat", "-A PREROUTING -p tcp -d " .. r_addr .. " --dport 80 -j " .. FW_ACCEPT)
+                iptables("nat", "-A PREROUTING -p tcp -s " .. r_addr .. " --dport 80 -j " .. FW_ACCEPT)
             end
         end
 
@@ -1127,6 +1129,7 @@ function RunProxyPorts()
                     echo("Enabling web proxy bypass for host: " .. r_addr)
 
                     iptables("nat", "-A PREROUTING -p tcp -d " .. r_addr .. " --dport 80 -j " .. FW_ACCEPT)
+                    iptables("nat", "-A PREROUTING -p tcp -s " .. r_addr .. " --dport 80 -j " .. FW_ACCEPT)
                 end
             end
 
@@ -1152,7 +1155,9 @@ function RunProxyPorts()
 
                     echo("Enabling web proxy bypass for host: " .. r_addr)
 
+                    -- TODO: should port restrictions be added here?
                     iptables("nat", "-A PREROUTING -d " .. r_addr .. " -j " .. FW_ACCEPT)
+                    iptables("nat", "-A PREROUTING -s " .. r_addr .. " -j " .. FW_ACCEPT)
                 end
             end
 
