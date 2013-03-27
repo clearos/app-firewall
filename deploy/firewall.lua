@@ -1643,13 +1643,13 @@ function RunBandwidthInternal()
     for _, ifn in pairs(IMQIF_UPSTREAM) do
         execute(string.format("%s link set %s up 2>/dev/null", IPBIN, ifn))
         execute(TCBIN .. " qdisc del dev " .. ifn .. " root handle 1: htb >/dev/null 2>&1")
-        execute(TCBIN .. " qdisc add dev " .. ifn .. " root handle 1: htb default 2 r2q 1")
+        execute(TCBIN .. " qdisc add dev " .. ifn .. " root handle 1: htb default 2")
     end
 
     for _, ifn in pairs(IMQIF_DOWNSTREAM) do
         execute(string.format("%s link set %s up 2>/dev/null", IPBIN, ifn))
         execute(TCBIN .. " qdisc del dev " .. ifn .. " root handle 1: htb >/dev/null 2>&1")
-        execute(TCBIN .. " qdisc add dev " .. ifn .. " root handle 1: htb default 2 r2q 1")
+        execute(TCBIN .. " qdisc add dev " .. ifn .. " root handle 1: htb default 2")
     end
 
     -- Create root class 1:1
