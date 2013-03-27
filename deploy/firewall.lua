@@ -1449,11 +1449,9 @@ function RunBandwidthEngine()
         end
     end
 
-    if QOS_ENGINE == "internal" then
-        if BANDWIDTH_QOS ~= "on" then return end
+	if BANDWIDTH_QOS == "on" then
         RunBandwidthInternal()
-    else
-        if QOS_ENABLE ~= "on" then return end
+    else if QOS_ENABLE == "on" then
         -- Start external QoS Manager
         bwx_init = assert(loadfile(QOS_ENGINE))
         bwx_init()
