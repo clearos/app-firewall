@@ -7,7 +7,7 @@
 --
 ------------------------------------------------------------------------------
 --
--- Copyright (C) 2011 ClearFoundation
+-- Copyright (C) 2011-2013 ClearFoundation
 -- 
 -- This program is free software; you can redistribute it and/or
 -- modify it under the terms of the GNU General Public License
@@ -64,4 +64,4 @@ function RunMultipathRouting()
     end
 end
 
--- vi: syntax=lua ts=4
+-- vi: expandtab shiftwidth=4 softtabstop=4 tabstop=4

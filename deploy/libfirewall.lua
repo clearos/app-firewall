@@ -130,13 +130,21 @@ function ValidateRule(r)
     end
 
     if b_and(r_type, tonumber(os.getenv("FWR_IFADDRESS"))) ~= 0 then
-        ip1, _, _, _ = GetInterfaceInfo(r_addr)
-        r = string.format("||0x%08x|%d|%s|%s|%s", r_type, r_proto, ip1, r_port, r_param)
+        if if_exists(r_addr) then
+            ip1, _, _, _ = GetInterfaceInfo(r_addr)
+            r = string.format("||0x%08x|%d|%s|%s|%s", r_type, r_proto, ip1, r_port, r_param)
+        else
+            r = DisableRule(r_type, r_proto, r_addr, r_port, r_param)
+        end
     end
 
     if b_and(r_type, tonumber(os.getenv("FWR_IFNETWORK"))) ~= 0 then
-        _, _, network, prefix = GetInterfaceInfo(r_addr)
-        r = string.format("||0x%08x|%d|%s/%s|%s|%s", r_type, r_proto, network, prefix, r_port, r_param)
+        if if_exists(r_addr) then
+            _, _, network, prefix = GetInterfaceInfo(r_addr)
+            r = string.format("||0x%08x|%d|%s/%s|%s|%s", r_type, r_proto, network, prefix, r_port, r_param)
+        else
+            r = DisableRule(r_type, r_proto, r_addr, r_port, r_param)
+        end
     end
 
     if (b_and(r_type, tonumber(os.getenv("FWR_INCOMING_BLOCK"))) ~= 0 or
@@ -588,20 +596,28 @@ function GetUntrustedInterfaces(all_interfaces)
     local ifn_trusted = {}
 
     for _, ifn in pairs(HOTIF) do
-        table.insert(ifn_trusted, ifn)
+        if if_exists(ifn) then
+            table.insert(ifn_trusted, ifn)
+        end
     end
 
     for _, ifn in pairs(DMZIF) do
-        table.insert(ifn_trusted, ifn)
+        if if_exists(ifn) then
+            table.insert(ifn_trusted, ifn)
+        end
     end
 
     if all_interfaces == true then
         for _, ifn in pairs(WANIF_CONFIG) do
-            table.insert(ifn_trusted, ifn)
+            if if_exists(ifn) then
+                table.insert(ifn_trusted, ifn)
+            end
         end
     else
         for _, ifn in pairs(WANIF) do
-            table.insert(ifn_trusted, ifn)
+            if if_exists(ifn) then
+                table.insert(ifn_trusted, ifn)
+            end
         end
     end
 
@@ -622,14 +638,16 @@ function GetTrustedInterfaces()
     local is_hot
 
     for _, ifn in pairs(LANIF) do
-        is_hot = false
+        if if_exists(ifn) then
+            is_hot = false
 
-        for __, ifn_hot in pairs(HOTIF) do
-            if ifn == ifn_hot then is_hot = true; break end 
-        end
+            for __, ifn_hot in pairs(HOTIF) do
+                if ifn == ifn_hot then is_hot = true; break end 
+            end
 
-        if is_hot == false then
-            table.insert(ifn_trusted, ifn)
+            if is_hot == false then
+                table.insert(ifn_trusted, ifn)
+            end
         end
     end
 
@@ -647,6 +665,7 @@ end
 function IsValidInterface(ifn)
     local ifn_wan
 
+    if not if_exists(ifn) then return false end
     if MULTIPATH_SKIP_DOWN_WANIF ~= nil then return true end
 
     for _, ifn_wan in pairs(WANIF) do
@@ -690,15 +709,21 @@ function NetworkInterfaces()
 
     -- All interfaces without a set role default to a LAN interface
     for _, ifn in pairs(SYSWATCH_WANIF) do
-        if string.len(ifn) ~= 0 then table.insert(difs, ifn) end
+        if string.len(ifn) ~= 0 and if_exists(ifn) then
+            table.insert(difs, ifn)
+        end
     end
 
     for _, ifn in pairs(LANIF) do
-        if string.len(ifn) ~= 0 then table.insert(difs, ifn) end
+        if string.len(ifn) ~= 0 and if_exists(ifn) then
+            table.insert(difs, ifn)
+        end
     end
 
     for _, ifn in pairs(DMZIF) do
-        if string.len(ifn) ~= 0 then table.insert(difs, ifn) end
+        if string.len(ifn) ~= 0 and if_exists(ifn) then
+            table.insert(difs, ifn)
+        end
     end
 
     for i, ifn in pairs(if_list()) do
@@ -749,10 +774,14 @@ function NetworkInterfaces()
     -- Ensure address of WAN interfaces are set
     t = WANIF; WANIF = {}
     for _, ifn in pairs(t) do
-        if if_address(ifn) == nil then
-            echo("Failed to detect IP address for WAN interface: " .. ifn)
+        if if_exists(ifn) then
+            if if_address(ifn) == nil then
+                echo("Failed to detect IP address for WAN interface: " .. ifn)
+            else
+                table.insert(WANIF, ifn)
+            end
         else
-            table.insert(WANIF, ifn)
+            echo("WAN interface doesn't exists: " .. ifn)
         end
     end
 
@@ -764,22 +793,26 @@ function NetworkInterfaces()
     if FW_MODE ~= "standalone" and FW_MODE ~= "trustedstandalone" then
         t = LANIF; LANIF = {}
         for _, ifn in pairs(t) do
-            -- Test if network configuration file exists
-            f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
+            if if_exists(ifn) then
+                -- Test if network configuration file exists
+                f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
 
-            if f == nil then
-                echo("Warning: LAN interface is not configured: " .. ifn)
-            else
-                io.close(f)
-
-                -- Test if interface has a set address and is up
-                if if_address(ifn) == nil then
-                    echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
-                elseif if_isup(ifn) == false then
-                    echo("Warning: LAN interface seems to be down: " .. ifn)
+                if f == nil then
+                    echo("Warning: LAN interface is not configured: " .. ifn)
                 else
-                    table.insert(LANIF, ifn)
+                    io.close(f)
+
+                    -- Test if interface has a set address and is up
+                    if if_address(ifn) == nil then
+                        echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
+                    elseif if_isup(ifn) == false then
+                        echo("Warning: LAN interface seems to be down: " .. ifn)
+                    else
+                        table.insert(LANIF, ifn)
+                    end
                 end
+            else
+                echo("LAN interface doesn't exists: " .. ifn)
             end
         end
     end
@@ -788,22 +821,26 @@ function NetworkInterfaces()
     if FW_MODE ~= "standalone" and FW_MODE ~= "trustedstandalone" then
         t = HOTIF; HOTIF = {}
         for _, ifn in pairs(t) do
-            -- Test if network configuration file exists
-            f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
+            if if_exists(ifn) then
+                -- Test if network configuration file exists
+                f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
 
-            if f == nil then
-                echo("Warning: LAN interface is not configured: " .. ifn)
-            else
-                io.close(f)
-
-                -- Test if interface has a set address and is up
-                if if_address(ifn) == nil then
-                    echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
-                elseif if_isup(ifn) == false then
-                    echo("Warning: LAN interface seems to be down: " .. ifn)
+                if f == nil then
+                    echo("Warning: LAN interface is not configured: " .. ifn)
                 else
-                    table.insert(HOTIF, ifn)
+                    io.close(f)
+
+                    -- Test if interface has a set address and is up
+                    if if_address(ifn) == nil then
+                        echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
+                    elseif if_isup(ifn) == false then
+                        echo("Warning: LAN interface seems to be down: " .. ifn)
+                    else
+                        table.insert(HOTIF, ifn)
+                    end
                 end
+            else
+                echo("HOTLAN interface doesn't exists: " .. ifn)
             end
         end
     end
@@ -812,22 +849,26 @@ function NetworkInterfaces()
     if FW_MODE == "dmz" then
         t = DMZIF; DMZIF = {}
         for _, ifn in pairs(t) do
-            -- Test if network configuration file exists
-            f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
+            if if_exists(ifn) then
+                -- Test if network configuration file exists
+                f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
 
-            if f == nil then
-                echo("Warning: DMZ interface is not configured: " .. ifn)
-            else
-                io.close(f)
-
-                -- Test if interface has a set address and is up
-                if if_address(ifn) == nil then
-                    echo("Failed to detect IP address for DMZ device: " .. ifn)
-                elseif if_isup(ifn) == false then
-                    echo("Warning: DMZ interface seems to be down: " .. ifn)
+                if f == nil then
+                    echo("Warning: DMZ interface is not configured: " .. ifn)
                 else
-                    table.insert(DMZIF, ifn)
+                    io.close(f)
+
+                    -- Test if interface has a set address and is up
+                    if if_address(ifn) == nil then
+                        echo("Failed to detect IP address for DMZ device: " .. ifn)
+                    elseif if_isup(ifn) == false then
+                        echo("Warning: DMZ interface seems to be down: " .. ifn)
+                    else
+                        table.insert(DMZIF, ifn)
+                    end
                 end
+            else
+                echo("DMZ interface doesn't exists: " .. ifn)
             end
         end
     end
@@ -956,4 +997,4 @@ function GetMemInfo()
     return total
 end
 
--- vi: syntax=lua ts=4
+-- vi: expandtab shiftwidth=4 softtabstop=4 tabstop=4

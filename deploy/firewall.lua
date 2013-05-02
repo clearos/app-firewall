@@ -9,6 +9,7 @@
 -- + additions by Paul Moore, pcmoore@engin.umich.edu
 -- + port to app-firewall (Lua) by darryl@pointclark.net
 --
+-- Copyright (C) 2010-2013 ClearFoundation
 -- Copyright (C) 2000-2009 Point Clark Networks
 -- Copyright (C) 2003 Paul Moore
 --
@@ -417,33 +418,35 @@ function RunCommonRules()
 
     -- Allow DHCP and caching DNS on Hot LAN
     for _, ifn_hot in pairs(HOTIF) do
-        ip, netmask, network, prefix = GetInterfaceInfo(ifn_hot)
+        if if_exists(ifn_hot) then
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn_hot)
 
-        -- Allow hosts on Hot LAN to use DHCP
-        iptables("filter", string.format("-A INPUT -i %s -p udp -d 255.255.255.255 --dport bootps --sport bootpc -j %s",
-            ifn_hot, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p tcp -d 255.255.255.255 --dport bootps --sport bootpc -j %s",
-            ifn_hot, FW_ACCEPT))
+            -- Allow hosts on Hot LAN to use DHCP
+            iptables("filter", string.format("-A INPUT -i %s -p udp -d 255.255.255.255 --dport bootps --sport bootpc -j %s",
+                ifn_hot, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p tcp -d 255.255.255.255 --dport bootps --sport bootpc -j %s",
+                ifn_hot, FW_ACCEPT))
 
-        -- Allow hosts on Hot LAN to use caching DNS
-        iptables("filter", string.format("-A INPUT -i %s -p udp -d %s --dport domain -s %s/%s -j %s",
-            ifn_hot, if_address(ifn_hot), network, netmask, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p tcp -d %s --dport domain -s %s/%s -j %s",
-            ifn_hot, if_address(ifn_hot), network, netmask, FW_ACCEPT))
+            -- Allow hosts on Hot LAN to use caching DNS
+            iptables("filter", string.format("-A INPUT -i %s -p udp -d %s --dport domain -s %s/%s -j %s",
+                ifn_hot, ip, network, netmask, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p tcp -d %s --dport domain -s %s/%s -j %s",
+                ifn_hot, ip, network, netmask, FW_ACCEPT))
 
-        -- Allow hosts on Hot LAN to ping
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 0 -j %s", ifn_hot, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 3 -j %s", ifn_hot, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 8 -j %s", ifn_hot, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 11 -j %s", ifn_hot, FW_ACCEPT))
+            -- Allow hosts on Hot LAN to ping
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 0 -j %s", ifn_hot, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 3 -j %s", ifn_hot, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 8 -j %s", ifn_hot, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 11 -j %s", ifn_hot, FW_ACCEPT))
 
-        -- Allow traffic from the LAN to the hot LAN, but not the other way
-        for __, ifn in pairs(LANIF) do
-            if ifn ~= ifn_hot then
-                iptables("filter", string.format("-A FORWARD -i %s -o %s -m state --state ESTABLISHED,RELATED -j %s",
-                    ifn_hot, ifn, FW_ACCEPT))
-                iptables("filter", string.format("-A FORWARD -i %s -o %s -j %s", ifn_hot, ifn, FW_DROP))
-                iptables("filter", string.format("-A FORWARD -i %s -o %s -j %s", ifn, ifn_hot, FW_ACCEPT))
+            -- Allow traffic from the LAN to the hot LAN, but not the other way
+            for __, ifn in pairs(LANIF) do
+                if ifn ~= ifn_hot then
+                    iptables("filter", string.format("-A FORWARD -i %s -o %s -m state --state ESTABLISHED,RELATED -j %s",
+                        ifn_hot, ifn, FW_ACCEPT))
+                    iptables("filter", string.format("-A FORWARD -i %s -o %s -j %s", ifn_hot, ifn, FW_DROP))
+                    iptables("filter", string.format("-A FORWARD -i %s -o %s -j %s", ifn, ifn_hot, FW_ACCEPT))
+                end
             end
         end
     end
@@ -451,19 +454,21 @@ function RunCommonRules()
     -- Allow DHCP and caching DNS on DMZ
     if FW_MODE == "dmz" then
         for _, ifn in pairs(DMZIF) do
-            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+            if if_exists(ifn) then
+                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-            -- Allow hosts on DMZ to use DHCP
-            iptables("filter", string.format("-A INPUT -i %s -p udp -d %s --dport bootps --sport bootpc -j %s",
-                ifn, if_address(ifn), FW_ACCEPT))
-            iptables("filter", string.format("-A INPUT -i %s -p tcp -d %s --dport bootps --sport bootpc -j %s",
-                ifn, if_address(ifn), FW_ACCEPT))
+                -- Allow hosts on DMZ to use DHCP
+                iptables("filter", string.format("-A INPUT -i %s -p udp -d %s --dport bootps --sport bootpc -j %s",
+                    ifn, ip, FW_ACCEPT))
+                iptables("filter", string.format("-A INPUT -i %s -p tcp -d %s --dport bootps --sport bootpc -j %s",
+                    ifn, ip, FW_ACCEPT))
 
-            -- Allow hosts on DMZ to use caching DNS
-            iptables("filter", string.format("-A INPUT -i %s -p udp -d %s --dport domain -s %s/%s -j %s",
-                ifn, if_address(ifn), network, netmask, FW_ACCEPT))
-            iptables("filter", string.format("-A INPUT -i %s -p tcp -d %s --dport domain -s %s/%s -j %s",
-                ifn, if_address(ifn), network, netmask, FW_ACCEPT))
+                -- Allow hosts on DMZ to use caching DNS
+                iptables("filter", string.format("-A INPUT -i %s -p udp -d %s --dport domain -s %s/%s -j %s",
+                    ifn, ip, network, netmask, FW_ACCEPT))
+                iptables("filter", string.format("-A INPUT -i %s -p tcp -d %s --dport domain -s %s/%s -j %s",
+                    ifn, ip, network, netmask, FW_ACCEPT))
+            end
         end
     end
 
@@ -574,18 +579,22 @@ function RunIncomingAllowed()
 
         for _, ifn in pairs(GetUntrustedInterfaces(false)) do
             iptables("filter",
-                string.format("-A INPUT -d %s -p 47 -j %s", if_address(ifn), FW_ACCEPT))
+                string.format("-A INPUT -d %s -p 47 -j %s",
+                    if_address(ifn), FW_ACCEPT))
             iptables("filter",
-                string.format("-A OUTPUT -o %s -s %s -p 47 -j %s", ifn, if_address(ifn), FW_ACCEPT))
+                string.format("-A OUTPUT -o %s -s %s -p 47 -j %s",
+                    ifn, if_address(ifn), FW_ACCEPT))
         end
 
         echo("Allowing incoming TCP (6) port 1723 for PPTP")
 
         for _, ifn in pairs(GetUntrustedInterfaces(false)) do
             iptables("filter",
-                string.format("-A INPUT -d %s -p tcp --dport 1723 -j %s", if_address(ifn), FW_ACCEPT))
+                string.format("-A INPUT -d %s -p tcp --dport 1723 -j %s",
+                    if_address(ifn), FW_ACCEPT))
             iptables("filter",
-                string.format("-A OUTPUT -o %s -s %s -p tcp --sport 1723 -j %s", ifn, if_address(ifn), FW_ACCEPT))
+                string.format("-A OUTPUT -o %s -s %s -p tcp --sport 1723 -j %s",
+                    ifn, if_address(ifn), FW_ACCEPT))
         end
     end
 
@@ -608,13 +617,17 @@ function RunIncomingAllowed()
 
         for _, ifn in pairs(GetUntrustedInterfaces(false)) do
             iptables("filter",
-                string.format("-A INPUT -d %s -p 50 -j %s", if_address(ifn), FW_ACCEPT))
+                string.format("-A INPUT -d %s -p 50 -j %s",
+                    if_address(ifn), FW_ACCEPT))
             iptables("filter",
-                string.format("-A OUTPUT -o %s -s %s -p 50 -j %s", ifn, if_address(ifn), FW_ACCEPT))
+                string.format("-A OUTPUT -o %s -s %s -p 50 -j %s",
+                    ifn, if_address(ifn), FW_ACCEPT))
             iptables("filter",
-                string.format("-A INPUT -d %s -p 51 -j %s", if_address(ifn), FW_ACCEPT))
+                string.format("-A INPUT -d %s -p 51 -j %s",
+                    if_address(ifn), FW_ACCEPT))
             iptables("filter",
-                string.format("-A OUTPUT -o %s -s %s -p 51 -j %s", ifn, if_address(ifn), FW_ACCEPT))
+                string.format("-A OUTPUT -o %s -s %s -p 51 -j %s",
+                    ifn, if_address(ifn), FW_ACCEPT))
         end
 
         -- Mark all incoming encrypted packets
@@ -625,14 +638,18 @@ function RunIncomingAllowed()
         -- are allowed.
         for _, ifn in pairs(GetUntrustedInterfaces(false)) do
             iptables("filter",
-                string.format("-A INPUT -d %s --match mark --mark 100 -j %s", if_address(ifn), FW_ACCEPT))
+                string.format("-A INPUT -d %s --match mark --mark 100 -j %s",
+                    if_address(ifn), FW_ACCEPT))
         end
 
         for _, ifn in pairs(LANIF) do
-            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+            if if_exists(ifn) then
+                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-            iptables("filter",
-                string.format("-A INPUT -d %s --match mark --mark 100 -j %s", ip, FW_ACCEPT))
+                iptables("filter",
+                    string.format("-A INPUT -d %s --match mark --mark 100 -j %s",
+                        ip, FW_ACCEPT))
+            end
         end 
 
         -- Packets destined for the LAN are allowed
@@ -796,21 +813,25 @@ function RunOutgoingDenied()
                 echo(action .. " outgoing " .. p_name(r_proto) .. " port " .. r_port)
 
                 for _, ifn in pairs(LANIF) do
-                    ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+                    if if_exists(ifn) then
+                        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-                    iptables("filter",
-                        string.format("-A FORWARD -s %s/%s -p %d --dport %s -j %s",
-                        network, netmask, r_proto, r_port, target))
+                        iptables("filter",
+                            string.format("-A FORWARD -s %s/%s -p %d --dport %s -j %s",
+                            network, netmask, r_proto, r_port, target))
+                    end
                 end
             else
                 echo(action .. " outgoing traffic to: " .. r_addr)
 
                 for _, ifn in pairs(LANIF) do
-                    ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+                    if if_exists(ifn) then
+                        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-                    iptables("filter",
-                        string.format("-A FORWARD -s %s/%s -d %s -j %s",
-                        network, netmask, r_addr, target))
+                        iptables("filter",
+                            string.format("-A FORWARD -s %s/%s -d %s -j %s",
+                            network, netmask, r_addr, target))
+                    end
                 end
             end
         end
@@ -861,21 +882,25 @@ function RunPortForwardRules()
             end
 
             for __, ifn in pairs(WANIF) do
-                iptables("nat",
-                    string.format("-A PREROUTING -d %s -p %d --dport %s -j DNAT --to %s",
-                    if_address(ifn), r_proto, r_param, to))
+                if if_exists(ifn) then
+                    iptables("nat",
+                        string.format("-A PREROUTING -d %s -p %d --dport %s -j DNAT --to %s",
+                        if_address(ifn), r_proto, r_param, to))
+                end
             end
 
             for __, ifn in pairs(LANIF) do
-                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+                if if_exists(ifn) then
+                    ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-                iptables("nat",
-                    string.format("-A POSTROUTING -d %s -p %d -s %s/%s --dport %s -j SNAT --to %s",
-                    r_addr, r_proto, network, netmask, dport, ip))
+                    iptables("nat",
+                        string.format("-A POSTROUTING -d %s -p %d -s %s/%s --dport %s -j SNAT --to %s",
+                        r_addr, r_proto, network, netmask, dport, ip))
 
-                iptables("filter",
-                    string.format("-A FORWARD -o %s -p %d -d %s --dport %s -j %s",
-                    ifn, r_proto, r_addr, dport, FW_ACCEPT))
+                    iptables("filter",
+                        string.format("-A FORWARD -o %s -p %d -d %s --dport %s -j %s",
+                        ifn, r_proto, r_addr, dport, FW_ACCEPT))
+                end
             end
         end
     end
@@ -891,28 +916,32 @@ function RunPortForwardRules()
             echo("Forwarding PPTP traffic to: " .. r_addr)
 
             for __, ifn in pairs(WANIF) do
-                iptables("nat",
-                    string.format("-A PREROUTING -d %s -p %d -j DNAT --to %s",
-                    if_address(ifn), r_proto, r_addr))
-                iptables("nat",
-                    string.format("-A PREROUTING -d %s -p tcp --dport %s -j DNAT --to %s",
-                    if_address(ifn), r_port, r_addr))
+                if if_exists(ifn) then
+                    iptables("nat",
+                        string.format("-A PREROUTING -d %s -p %d -j DNAT --to %s",
+                        if_address(ifn), r_proto, r_addr))
+                    iptables("nat",
+                        string.format("-A PREROUTING -d %s -p tcp --dport %s -j DNAT --to %s",
+                        if_address(ifn), r_port, r_addr))
+                end
             end
 
             for __, ifn in pairs(LANIF) do
-                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+                if ifn_eixsts(ifn) then
+                    ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-                for ___, ifn_wan in pairs(WANIF) do
-                    iptables("filter",
-                        string.format("-A FORWARD -i %s -o %s -p %d -d %s -j %s",
-                        ifn_wan, ifn, r_proto, r_addr, FW_ACCEPT))
-                    iptables("filter",
-                        string.format("-A FORWARD -i %s -o %s -p tcp -d %s --dport %s -j %s",
-                        ifn_wan, ifn, r_addr, r_port, FW_ACCEPT))
+                    for ___, ifn_wan in pairs(WANIF) do
+                        iptables("filter",
+                            string.format("-A FORWARD -i %s -o %s -p %d -d %s -j %s",
+                            ifn_wan, ifn, r_proto, r_addr, FW_ACCEPT))
+                        iptables("filter",
+                            string.format("-A FORWARD -i %s -o %s -p tcp -d %s --dport %s -j %s",
+                            ifn_wan, ifn, r_addr, r_port, FW_ACCEPT))
+                    end
+
+                    -- XXX: Can only have one of these...
+                    break
                 end
-
-                -- XXX: Can only have one of these...
-                break
             end
         end
     end
@@ -1013,10 +1042,12 @@ function RunProxyPorts()
 
     elseif SQUID_TRANSPARENT == "on" and bridge == true then
         -- Do not proxy connections to LAN addresses
-        _, netmask, network, __ = GetInterfaceInfo(WANIF_CONFIG[1])
-        iptables("nat",
-            string.format("-A PREROUTING -p tcp -d %s/%s --dport 80 -j ACCEPT",
-            network, netmask))
+        if if_exists(WANIF_CONFIG[1]) then
+            _, netmask, network, __ = GetInterfaceInfo(WANIF_CONFIG[1])
+            iptables("nat",
+                string.format("-A PREROUTING -p tcp -d %s/%s --dport 80 -j ACCEPT",
+                network, netmask))
+        end
 
         -- Insert any web proxy bypass rules for borked web servers (IIS for example)
         for _, rule in pairs(RULES) do
@@ -1060,9 +1091,11 @@ function RunProxyPorts()
         end
 
         for _, ifn in pairs(WANIF) do
-            iptables("nat",
-                string.format("-A PREROUTING -p tcp -d %s --dport 80 -j ACCEPT",
-                if_address(ifn)))
+            if if_exists(ifn) then
+                iptables("nat",
+                    string.format("-A PREROUTING -p tcp -d %s --dport 80 -j ACCEPT",
+                    if_address(ifn)))
+            end
         end
 
         -- Insert any web proxy bypass rules for borked web servers (IIS for example)
@@ -1366,54 +1399,59 @@ function RunCustomRules()
                 end
 
                 for __, ifn in pairs(WANIF) do
-                    if dst_addr ~= nil and string.len(dst_addr) ~= 0 then
-                        iptables("nat",
-                            string.format("%s -d %s -j DNAT --to %s", prerouting, if_address(ifn), dst_addr)) 
-                    else
-                        iptables("nat",
-                            string.format("%s -d %s", prerouting, if_address(ifn))) 
+                    if if_exists(ifn) then
+                        if dst_addr ~= nil and string.len(dst_addr) ~= 0 then
+                            iptables("nat",
+                                string.format("%s -d %s -j DNAT --to %s",
+                                    prerouting, if_address(ifn), dst_addr)) 
+                        else
+                            iptables("nat",
+                                string.format("%s -d %s", prerouting, if_address(ifn))) 
+                        end
                     end
                 end
 
                 for __, ifn in pairs(LANIF) do
-                    ip, netmask, network, ____ = GetInterfaceInfo(ifn)
+                    if if_exists(ifn) then
+                        ip, netmask, network, ____ = GetInterfaceInfo(ifn)
 
-                    postrouting = "-A POSTROUTING -p " .. r_proto
+                        postrouting = "-A POSTROUTING -p " .. r_proto
 
-                    if dst_addr ~= nil and string.len(dst_addr) ~= 0 then
-                        postrouting = postrouting .. " -d " .. dst_addr
-                    end
+                        if dst_addr ~= nil and string.len(dst_addr) ~= 0 then
+                            postrouting = postrouting .. " -d " .. dst_addr
+                        end
 
-                    postrouting = string.format("%s -s %s/%s",
-                        postrouting, network, netmask)
+                        postrouting = string.format("%s -s %s/%s",
+                            postrouting, network, netmask)
 
-                    if dst_port ~= nil and string.len(dst_port) ~= 0 and
-                        (tonumber(r_proto) == 6 or tonumber(r_proto) == 17) then
-                        postrouting = postrouting .. " --dport " .. dst_port
-                    end
+                        if dst_port ~= nil and string.len(dst_port) ~= 0 and
+                            (tonumber(r_proto) == 6 or tonumber(r_proto) == 17) then
+                            postrouting = postrouting .. " --dport " .. dst_port
+                        end
 
-                    postrouting = postrouting .. " -j SNAT --to " .. ip
+                        postrouting = postrouting .. " -j SNAT --to " .. ip
 
-                    iptables("nat", postrouting)
+                        iptables("nat", postrouting)
 
-                    forward = string.format("-A FORWARD -o %s -p %s", ifn, r_proto)
+                        forward = string.format("-A FORWARD -o %s -p %s", ifn, r_proto)
 
-                    if r_addr ~= nil and string.len(r_addr) ~= 0 then
-                        forward = forward .. " -s " .. r_addr
-                    end
+                        if r_addr ~= nil and string.len(r_addr) ~= 0 then
+                            forward = forward .. " -s " .. r_addr
+                        end
 
-                    if dst_addr ~= nil and string.len(dst_addr) ~= 0 then
-                        forward = forward .. " -d " .. dst_addr
-                    end
+                        if dst_addr ~= nil and string.len(dst_addr) ~= 0 then
+                            forward = forward .. " -d " .. dst_addr
+                        end
 
-                    if dst_port ~= nil and string.len(dst_port) ~= nil and
-                        (tonumber(r_proto) == 6 or tonumber(r_proto) == 17) then
-                        forward = forward .. " --dport " .. dst_port
-                    end
+                        if dst_port ~= nil and string.len(dst_port) ~= nil and
+                            (tonumber(r_proto) == 6 or tonumber(r_proto) == 17) then
+                            forward = forward .. " --dport " .. dst_port
+                        end
 
-                    for ___, ifn_wan in pairs(WANIF) do
-                        iptables("filter",
-                            string.format("%s -j %s", forward, FW_ACCEPT))
+                        for ___, ifn_wan in pairs(WANIF) do
+                            iptables("filter",
+                                string.format("%s -j %s", forward, FW_ACCEPT))
+                        end
                     end
                 end
             else
@@ -1449,7 +1487,7 @@ function RunBandwidthEngine()
         end
     end
 
-	if BANDWIDTH_QOS == "on" then
+    if BANDWIDTH_QOS == "on" then
         RunBandwidthInternal()
     elseif QOS_ENABLE == "on" then
         -- Start external QoS Manager
@@ -1903,25 +1941,27 @@ function RunDmzPinhole()
 
             for __, ifn_lan in pairs(LANIF) do
                 for ___, ifn_dmz in pairs(DMZIF) do
-                    ip, netmask, network, prefix = GetInterfaceInfo(ifn_dmz)
+                    if if_exists(ifn_dmz) then
+                        ip, netmask, network, prefix = GetInterfaceInfo(ifn_dmz)
 
-                    lan = string.format("-A FORWARD -i %s -o %s -p %d -s %s -d %s/%s -j %s",
-                        ifn_lan, ifn_dmz, r_proto, r_addr, network, netmask, FW_ACCEPT)
-                    dmz = string.format("-A FORWARD -i %s -o %s -p %d -d %s -s %s/%s -j %s",
-                        ifn_dmz, ifn_lan, r_proto, r_addr, network, netmask, FW_ACCEPT)
+                        lan = string.format("-A FORWARD -i %s -o %s -p %d -s %s -d %s/%s -j %s",
+                            ifn_lan, ifn_dmz, r_proto, r_addr, network, netmask, FW_ACCEPT)
+                        dmz = string.format("-A FORWARD -i %s -o %s -p %d -d %s -s %s/%s -j %s",
+                            ifn_dmz, ifn_lan, r_proto, r_addr, network, netmask, FW_ACCEPT)
 
-                    if string.len(r_port) == 0 then
-                        echo(string.format("Allowing DMZ pinhole %s -> %s: %s %s",
-                            ifn_lan, ifn_dmz, p_name(r_proto), r_addr))
+                        if string.len(r_port) == 0 then
+                            echo(string.format("Allowing DMZ pinhole %s -> %s: %s %s",
+                                ifn_lan, ifn_dmz, p_name(r_proto), r_addr))
 
-                        iptables("filter", lan)
-                        iptables("filter", dmz)
-                    else
-                        echo(string.format("Allowing DMZ pinhole %s -> %s: %s %s:%s",
-                            ifn_dmz, ifn_lan, p_name(r_proto), r_addr, r_port))
+                            iptables("filter", lan)
+                            iptables("filter", dmz)
+                        else
+                            echo(string.format("Allowing DMZ pinhole %s -> %s: %s %s:%s",
+                                ifn_dmz, ifn_lan, p_name(r_proto), r_addr, r_port))
 
-                        iptables("filter", lan .. " --sport " .. r_port)
-                        iptables("filter", dmz .. " --dport " .. r_port)
+                            iptables("filter", lan .. " --sport " .. r_port)
+                            iptables("filter", dmz .. " --dport " .. r_port)
+                        end
                     end
                 end
             end
@@ -1961,29 +2001,31 @@ function RunDmzIncoming()
             b_and(r_type, tonumber(os.getenv("FWR_CUSTOM"))) == 0 then
 
             for __, ifn in pairs(DMZIF) do
-                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+                if if_exists(ifn) then
+                    ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-                input = string.format("-p %d -s %s -j %s",
-                    r_proto, r_addr, FW_ACCEPT)
-                output = string.format("-p %d -d %s -j %s",
-                    r_proto, r_addr, FW_ACCEPT)
+                    input = string.format("-p %d -s %s -j %s",
+                        r_proto, r_addr, FW_ACCEPT)
+                    output = string.format("-p %d -d %s -j %s",
+                        r_proto, r_addr, FW_ACCEPT)
 
-                if string.len(r_port) == 0 then
-                    echo(string.format("Allowing DMZ incoming %s: %s %s",
-                        ifn, p_name(r_proto), r_addr))
-                else
-                    echo(string.format("Allowing DMZ incoming %s: %s %s:%s",
-                        ifn, p_name(r_proto), r_addr, r_port))
+                    if string.len(r_port) == 0 then
+                        echo(string.format("Allowing DMZ incoming %s: %s %s",
+                            ifn, p_name(r_proto), r_addr))
+                    else
+                        echo(string.format("Allowing DMZ incoming %s: %s %s:%s",
+                            ifn, p_name(r_proto), r_addr, r_port))
 
-                    input = input .. " --sport " .. r_port
-                    output = output .. " --dport " .. r_port
-                end
+                        input = input .. " --sport " .. r_port
+                        output = output .. " --dport " .. r_port
+                    end
 
-                for ___, ifn_wan in pairs(WANIF) do
-                    iptables("filter", string.format("-A FORWARD -i %s -o %s %s",
-                        ifn, ifn_wan, input))
-                    iptables("filter", string.format("-A FORWARD -i %s -o %s %s",
-                        ifn_wan, ifn, output))
+                    for ___, ifn_wan in pairs(WANIF) do
+                        iptables("filter", string.format("-A FORWARD -i %s -o %s %s",
+                            ifn, ifn_wan, input))
+                        iptables("filter", string.format("-A FORWARD -i %s -o %s %s",
+                            ifn_wan, ifn, output))
+                    end
                 end
             end
         end
@@ -2088,13 +2130,15 @@ function RunOneToOneNat()
     -- Create aliases
     for __, ifn_wan in pairs(WANIF) do
         count = 200
-        ___, netmask, ___, ___ = GetInterfaceInfo(ifn_wan)
-        for ____, ip in pairs(nat_addr[ifn_wan]) do
-            echo("Creating alias IP address for 1-to-1 NAT: " .. ip)
-            execute(string.format("%s %s:%d %s netmask %s up",
-                IFCONFIG, ifn_wan, count, ip, netmask))
-            count = count + 1
-         end
+        if if_exists(ifn_wan) then
+            ___, netmask, ___, ___ = GetInterfaceInfo(ifn_wan)
+            for ____, ip in pairs(nat_addr[ifn_wan]) do
+                echo("Creating alias IP address for 1-to-1 NAT: " .. ip)
+                execute(string.format("%s %s:%d %s netmask %s up",
+                    IFCONFIG, ifn_wan, count, ip, netmask))
+                count = count + 1
+             end
+        end
     end
 
     -- Run 1-to-1 NAT rules - single port only
@@ -2155,12 +2199,14 @@ function RunOneToOneNat()
                     r_proto, r_addr, r_port, toip))
 
                 for __, ifn_lan in pairs(LANIF) do
-                    ip, netmask, network, ___ = GetInterfaceInfo(ifn_lan)
+                    if if_exists(ifn_lan) then
+                        ip, netmask, network, ___ = GetInterfaceInfo(ifn_lan)
 
-                    -- Lets anything coming from LAN network to use public IP
-                    iptables("nat",
-                        string.format("-A POSTROUTING -p %d -s %s/%s -d %s --dport %s -j SNAT --to %s",
-                            r_proto, network, netmask, toip, r_port, ip))
+                        -- Lets anything coming from LAN network to use public IP
+                        iptables("nat",
+                            string.format("-A POSTROUTING -p %d -s %s/%s -d %s --dport %s -j SNAT --to %s",
+                                r_proto, network, netmask, toip, r_port, ip))
+                    end
                 end
 
                 iptables("filter", string.format("-A FORWARD -i %s -p %d -d %s --dport %s -j %s",
@@ -2202,12 +2248,14 @@ function RunOneToOneNat()
                     toip, r_addr))
 
                 for __, ifn_lan in pairs(LANIF) do
-                    ip, netmask, network, ___ = GetInterfaceInfo(ifn_lan)
+                    if if_exists(ifn_lan) then
+                        ip, netmask, network, ___ = GetInterfaceInfo(ifn_lan)
 
-                    -- Lets anything coming from LAN network to use public IP
-                    iptables("nat",
-                        string.format("-A POSTROUTING -s %s/%s -d %s -j SNAT --to %s",
-                            network, netmask, toip, ip))
+                        -- Lets anything coming from LAN network to use public IP
+                        iptables("nat",
+                            string.format("-A POSTROUTING -s %s/%s -d %s -j SNAT --to %s",
+                                network, netmask, toip, ip))
+                    end
                 end
 
                 iptables("filter", string.format("-A FORWARD -i %s -d %s -j %s", ifn_wan, toip, FW_ACCEPT))
@@ -2235,9 +2283,11 @@ function RunMasquerading()
     -- traffic from other networks behind a DMZ for example, will end up being
     -- masqueraded.
     for _, ifn in pairs(DMZIF) do
-        __, __, network, prefix = GetInterfaceInfo(ifn)
-        iptables("nat", string.format("-A POSTROUTING -s %s/%s -j ACCEPT",
-            network, prefix))
+        if if_exists(ifn) then
+            __, __, network, prefix = GetInterfaceInfo(ifn)
+            iptables("nat", string.format("-A POSTROUTING -s %s/%s -j ACCEPT",
+                network, prefix))
+        end
     end
 
     -- TODO: migrate miniupnpd to plugin framework
@@ -2352,22 +2402,26 @@ function RunForwardingDefaults()
         iptables("filter", "-A FORWARD -i " .. ifn .. " -j " .. accept_target)
     end
 
+    if EGRESS_FILTERING ~= "off" then
+        echo("Egress filter enabled, blocking all outgoing traffic (except ICMP) by default")
+    end
+
     for _, ifn in pairs(LANIF) do
         if EGRESS_FILTERING == "off" then
             iptables("filter", "-A FORWARD -i " .. ifn .. " -j " .. accept_target)
         else
-            echo("Egress filter enabled, blocking all outgoing traffic (except ICMP) by default")
+            if if_exists(ifn) then
+                __, netmask, network, __= GetInterfaceInfo(ifn)
 
-            __, netmask, network, __= GetInterfaceInfo(ifn)
-
-            iptables("filter",
-                string.format("-A FORWARD -p icmp --icmp-type 0 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
-            iptables("filter",
-                string.format("-A FORWARD -p icmp --icmp-type 8 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
-            iptables("filter",
-                string.format("-A FORWARD -p icmp --icmp-type 11 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
-            iptables("filter",
-                string.format("-A FORWARD -s %s/%s -j %s", network, netmask, FW_DROP))
+                iptables("filter",
+                    string.format("-A FORWARD -p icmp --icmp-type 0 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
+                iptables("filter",
+                    string.format("-A FORWARD -p icmp --icmp-type 8 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
+                iptables("filter",
+                    string.format("-A FORWARD -p icmp --icmp-type 11 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
+                iptables("filter",
+                    string.format("-A FORWARD -s %s/%s -j %s", network, netmask, FW_DROP))
+            end
         end
     end
 
@@ -2407,86 +2461,92 @@ function RunForwardingDmz()
     echo("Running default DMZ rules")
 
     for _, ifn in pairs(DMZIF) do
-        __, __, network, prefix = GetInterfaceInfo(ifn)
+        if if_exists(ifn) then
+            __, __, network, prefix = GetInterfaceInfo(ifn)
 
-        -- Proxy ARP mode - only 1 DMZ interface supported!
-        for ___, ifn_wan in pairs(WANIF) do
-            ____, ____, xnetwork, xprefix = GetInterfaceInfo(ifn_wan)
+            -- Proxy ARP mode - only 1 DMZ interface supported!
+            for ___, ifn_wan in pairs(WANIF) do
+                if if_exists(ifn_wan) then
+                    ip, ____, xnetwork, xprefix = GetInterfaceInfo(ifn_wan)
 
-            if xnetwork == network and xprefix == prefix then
-                echo("Detected proxy ARP mode")
+                    if xnetwork == network and xprefix == prefix then
+                        echo("Detected proxy ARP mode")
 
-                execute(SYSCTL .. " -w net.ipv4.conf." .. ifn_wan .. ".proxy_arp=1 >/dev/null")
-                execute(SYSCTL .. " -w net.ipv4.conf." .. ifn .. ".proxy_arp=1 >/dev/null")
+                        execute(SYSCTL .. " -w net.ipv4.conf." .. ifn_wan .. ".proxy_arp=1 >/dev/null")
+                        execute(SYSCTL .. " -w net.ipv4.conf." .. ifn .. ".proxy_arp=1 >/dev/null")
 
-                -- Add route to proxy-arped interfaces
-                execute(string.format("%s route add %s/%s dev %s 2>/dev/null",
-                    IPBIN, network, prefix, ifn))
-                execute(string.format("%s route add %s/%s dev %s 2>/dev/null",
-                    IPBIN, network, prefix, ifn_wan))
+                        -- Add route to proxy-arped interfaces
+                        execute(string.format("%s route add %s/%s dev %s 2>/dev/null",
+                            IPBIN, network, prefix, ifn))
+                        execute(string.format("%s route add %s/%s dev %s 2>/dev/null",
+                            IPBIN, network, prefix, ifn_wan))
 
-                -- Add IP route
-                execute(string.format("%s route add %s dev %s 2>/dev/null",
-                    IPBIN, if_address(ifn_wan), ifn_wan))
-                execute(string.format("%s route add %s dev %s 2>/dev/null",
-                    IPBIN, if_address(ifn_wan), ifn))
+                        -- Add IP route
+                        execute(string.format("%s route add %s dev %s 2>/dev/null",
+                            IPBIN, ip, ifn_wan))
+                        execute(string.format("%s route add %s dev %s 2>/dev/null",
+                            IPBIN, ip, ifn))
 
-                -- Add gateway route
-                execute(string.format("%s route add %s dev %s 2>/dev/null",
-                    IPBIN, GetInterfaceGateway(ifn_wan), ifn_wan))
+                        -- Add gateway route
+                        execute(string.format("%s route add %s dev %s 2>/dev/null",
+                            IPBIN, GetInterfaceGateway(ifn_wan), ifn_wan))
+                    end
+                end
             end
+
+            -- Allow ICMP from DMZ to anywhere and anywhere to DMZ
+            iptables("filter",
+                string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 0 -j %s",
+                network, prefix, FW_ACCEPT))
+            iptables("filter",
+                string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 0 -j %s",
+                network, prefix, FW_ACCEPT))
+            iptables("filter",
+                string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 3 -j %s",
+                network, prefix, FW_ACCEPT))
+            iptables("filter",
+                string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 3 -j %s",
+                network, prefix, FW_ACCEPT))
+            -- This allows any host on the DMZ to ping anyone (including hosts on the LAN)
+            iptables("filter",
+                string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 8 -j %s",
+                network, prefix, FW_ACCEPT))
+            -- This allows any host (from anywhere) to ping hosts on the DMZ
+            iptables("filter",
+                string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 8 -j %s",
+                network, prefix, FW_ACCEPT))
+            iptables("filter",
+                string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 11 -j %s",
+                network, prefix, FW_ACCEPT))
+            iptables("filter",
+                string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 11 -j %s",
+                network, prefix, FW_ACCEPT))
+            iptables("filter",
+                string.format("-A FORWARD -s %s/%s -p icmp -j %s", network, prefix, FW_DROP))
+            iptables("filter",
+                string.format("-A FORWARD -d %s/%s -p icmp -j %s", network, prefix, FW_DROP))
+
+            -- Allow traffic from the LAN to the DMZ, but not the other way
+            -- Add DMZ pinhole rules to allow specific traffic the other way
+            dnetwork = network
+            dprefix = prefix
+
+            for ___, ifn_lan in pairs(LANIF) do
+                if if_exists(ifn_lan) then
+                    ____, ____, network, prefix = GetInterfaceInfo(ifn_lan)
+
+                    iptables("filter",
+                        string.format("-A FORWARD -s %s/%s -d %s/%s -m state --state ESTABLISHED,RELATED -j %s",
+                        dnetwork, dprefix, network, prefix, FW_ACCEPT))
+                    iptables("filter",
+                        string.format("-A FORWARD -s %s/%s -d %s/%s -j %s", dnetwork, dprefix, network, prefix,
+                        FW_DROP))
+                    iptables("filter",
+                        string.format("-A FORWARD -s %s/%s -d %s/%s -j %s", network, prefix, dnetwork, dprefix,
+                        FW_ACCEPT))
+                end
+            end 
         end
-
-        -- Allow ICMP from DMZ to anywhere and anywhere to DMZ
-        iptables("filter",
-            string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 0 -j %s",
-            network, prefix, FW_ACCEPT))
-        iptables("filter",
-            string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 0 -j %s",
-            network, prefix, FW_ACCEPT))
-        iptables("filter",
-            string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 3 -j %s",
-            network, prefix, FW_ACCEPT))
-        iptables("filter",
-            string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 3 -j %s",
-            network, prefix, FW_ACCEPT))
-        -- This allows any host on the DMZ to ping anyone (including hosts on the LAN)
-        iptables("filter",
-            string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 8 -j %s",
-            network, prefix, FW_ACCEPT))
-        -- This allows any host (from anywhere) to ping hosts on the DMZ
-        iptables("filter",
-            string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 8 -j %s",
-            network, prefix, FW_ACCEPT))
-        iptables("filter",
-            string.format("-A FORWARD -s %s/%s -p icmp --icmp-type 11 -j %s",
-            network, prefix, FW_ACCEPT))
-        iptables("filter",
-            string.format("-A FORWARD -d %s/%s -p icmp --icmp-type 11 -j %s",
-            network, prefix, FW_ACCEPT))
-        iptables("filter",
-            string.format("-A FORWARD -s %s/%s -p icmp -j %s", network, prefix, FW_DROP))
-        iptables("filter",
-            string.format("-A FORWARD -d %s/%s -p icmp -j %s", network, prefix, FW_DROP))
-
-        -- Allow traffic from the LAN to the DMZ, but not the other way
-        -- Add DMZ pinhole rules to allow specific traffic the other way
-        dnetwork = network
-        dprefix = prefix
-
-        for ___, ifn in pairs(LANIF) do
-            ____, ____, network, prefix = GetInterfaceInfo(ifn)
-
-            iptables("filter",
-                string.format("-A FORWARD -s %s/%s -d %s/%s -m state --state ESTABLISHED,RELATED -j %s",
-                dnetwork, dprefix, network, prefix, FW_ACCEPT))
-            iptables("filter",
-                string.format("-A FORWARD -s %s/%s -d %s/%s -j %s", dnetwork, dprefix, network, prefix,
-                FW_DROP))
-            iptables("filter",
-                string.format("-A FORWARD -s %s/%s -d %s/%s -j %s", network, prefix, dnetwork, dprefix,
-                FW_ACCEPT))
-        end 
     end
 end
 
@@ -2537,17 +2597,19 @@ function RunMultipath()
     t = 200
     if table.getn(WANIF_CONFIG) > 1 then
         for _, ifn in pairs(WANIF_CONFIG) do
-            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+            if if_exists(ifn) then
+                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-            execute(string.format("%s route flush table %d", IPBIN, t))
-            execute(string.format("%s rule add prio %d from %s/%s table %d",
-                IPBIN, t, ip, prefix, t))
-            execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
-                IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
-            execute(string.format("%s route append prohibit default table %d metric 1 proto static",
-                IPBIN, t))
+                execute(string.format("%s route flush table %d", IPBIN, t))
+                execute(string.format("%s rule add prio %d from %s/%s table %d",
+                    IPBIN, t, ip, prefix, t))
+                execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
+                    IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
+                execute(string.format("%s route append prohibit default table %d metric 1 proto static",
+                    IPBIN, t))
 
-            t = t + 1
+                t = t + 1
+            end
         end
     end
 
@@ -2649,29 +2711,33 @@ function RunMultipath()
             IsValidInterface(r_param) ~= false then
 
             -- Destination port rule
-            if b_and(r_type, tonumber(os.getenv("FWR_SBR_PORT"))) ~= 0 then
+            if b_and(r_type, tonumber(os.getenv("FWR_SBR_PORT"))) ~= 0 and if_exists(r_param) then
                 echo(string.format("Adding destination port rule: %s %s -> %s (%s)",
                     r_port, p_name(r_proto), if_address(r_param), r_param))
 
                 for __, ifn in pairs(LANIF) do
-                    ____, ____, network, prefix = GetInterfaceInfo(ifn)
+                    if if_exists(ifn) then
+                        ____, ____, network, prefix = GetInterfaceInfo(ifn)
 
-                    if table.getn(DMZIF) == 0 then
-                        iptables("mangle",
-                            string.format("-A MULTIWAN_MARK -s %s/%s -p %d --dport %s -j MULTIWAN_%s",
-                            network, prefix, r_proto, r_port, r_param))
-                    else
-                        for ___, ifn_dmz in pairs(DMZIF) do
-                            ____, ____, dmz_network, dmz_prefix = GetInterfaceInfo(ifn_dmz)
-
+                        if table.getn(DMZIF) == 0 then
                             iptables("mangle",
-                                string.format("-A MULTIWAN_MARK -s %s/%s ! -d %s/%s -p %d --dport %s -j MULTIWAN_%s",
-                                network, prefix, dmz_network, dmz_prefix, r_proto, r_port, r_param))
+                                string.format("-A MULTIWAN_MARK -s %s/%s -p %d --dport %s -j MULTIWAN_%s",
+                                network, prefix, r_proto, r_port, r_param))
+                        else
+                            for ___, ifn_dmz in pairs(DMZIF) do
+                                if if_exists(ifn_dmz) then
+                                    ____, ____, dmz_network, dmz_prefix = GetInterfaceInfo(ifn_dmz)
+
+                                    iptables("mangle",
+                                        string.format("-A MULTIWAN_MARK -s %s/%s ! -d %s/%s -p %d --dport %s -j MULTIWAN_%s",
+                                        network, prefix, dmz_network, dmz_prefix, r_proto, r_port, r_param))
+                                end
+                            end
                         end
                     end
                 end
             -- Source-based route rule
-            else
+            else if if_exists(r_param) then
                 echo(string.format("Adding source-based route rule: %s -> %s (%s)",
                     r_addr, if_address(r_param), r_param))
 
@@ -2680,11 +2746,13 @@ function RunMultipath()
                         string.format("-A MULTIWAN_MARK -s %s -j MULTIWAN_%s", r_addr, r_param))
                 else
                     for __, ifn_dmz in pairs(DMZIF) do
-                        ___, ___, dmz_network, dmz_prefix = GetInterfaceInfo(ifn_dmz)
+                        if if_exists(ifn_dmz) then
+                          ___, ___, dmz_network, dmz_prefix = GetInterfaceInfo(ifn_dmz)
 
-                        iptables("mangle",
-                            string.format("-A MULTIWAN_MARK -s %s ! -d %s/%s -j MULTIWAN_%s",
-                            r_addr, dmz_network, dmz_prefix, r_param))
+                          iptables("mangle",
+                              string.format("-A MULTIWAN_MARK -s %s ! -d %s/%s -j MULTIWAN_%s",
+                              r_addr, dmz_network, dmz_prefix, r_param))
+                        end
                     end
                 end
             end
@@ -2889,28 +2957,34 @@ function ShowFirewallMode()
 
     -- WAN info
     for _, ifn in pairs(WANIF) do
-        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+        if if_exists(WANIF) then
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-        echo(string.format("Detected WAN info - %s %s on network %s/%s",
-            ifn, ip, network, prefix))
+            echo(string.format("Detected WAN info - %s %s on network %s/%s",
+                ifn, ip, network, prefix))
+        end
     end
 
     -- LAN info
     if FW_MODE ~= "standalone" and FW_MODE ~= "trustedstandalone" then
         for _, ifn in pairs(LANIF) do
-            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+            if if_exists(ifn) then
+                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-            echo(string.format("Detected LAN info - %s %s on network %s/%s",
-                ifn, ip, network, prefix))
+                echo(string.format("Detected LAN info - %s %s on network %s/%s",
+                    ifn, ip, network, prefix))
+            end
         end
     end
 
     -- DMZ info
     for _, ifn in pairs(DMZIF) do
-        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+        if if_exists(ifn) then
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-        echo(string.format("Detected DMZ info - %s %s on network %s/%s",
-            ifn, ip, network, prefix))
+            echo(string.format("Detected DMZ info - %s %s on network %s/%s",
+                ifn, ip, network, prefix))
+        end
     end
 end
 
@@ -2948,4 +3022,4 @@ else error("Invalid firewall mode: " .. FW_MODE) end
 -- Commit changes
 for _, t in pairs(TABLES) do iptc_commit(t) end
 
--- vi: syntax=lua ts=4
+-- vi: expandtab shiftwidth=4 softtabstop=4 tabstop=4

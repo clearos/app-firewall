@@ -17,7 +17,7 @@ Summary: Firewall - Core
 Requires: app-base-core
 Requires: app-network-core
 Requires: csplugin-filewatch
-Requires: firewall >= 1.4.7-3
+Requires: firewall >= 1.4.7-17
 Requires: iptables
 
 %description core

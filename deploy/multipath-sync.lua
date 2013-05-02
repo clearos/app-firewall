@@ -56,4 +56,4 @@ RunMultipathRouting()
 
 execute(IPBIN .. " route flush cache")
 
--- vi: syntax=lua ts=4
+-- vi: expandtab shiftwidth=4 softtabstop=4 tabstop=4
