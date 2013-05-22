@@ -3,9 +3,9 @@
 /**
  * Firewall rule class.
  *
- * @category   Apps
- * @package    Firewall
- * @subpackage Libraries
+ * @category   apps
+ * @package    firewall
+ * @subpackage libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2004-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
@@ -85,9 +85,9 @@ clearos_load_library('firewall/Firewall_Invalid_Rule_Exception');
 /**
  * Firewall rule class.
  *
- * @category   Apps
- * @package    Firewall
- * @subpackage Libraries
+ * @category   apps
+ * @package    firewall
+ * @subpackage libraries
  * @author     ClearFoundation <developer@clearfoundation.com>
  * @copyright  2004-2013 ClearFoundation
  * @license    http://www.gnu.org/copyleft/lgpl.html GNU Lesser General Public License version 3 or later
