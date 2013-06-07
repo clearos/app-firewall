@@ -2959,7 +2959,7 @@ function ShowFirewallMode()
 
     -- WAN info
     for _, ifn in pairs(WANIF) do
-        if if_exists(WANIF) then
+        if if_exists(ifn) then
             ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
             echo(string.format("Detected WAN info - %s %s on network %s/%s",
