@@ -2737,7 +2737,7 @@ function RunMultipath()
                     end
                 end
             -- Source-based route rule
-            else if if_exists(r_param) then
+            elseif if_exists(r_param) then
                 echo(string.format("Adding source-based route rule: %s -> %s (%s)",
                     r_addr, if_address(r_param), r_param))
 
