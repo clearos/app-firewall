@@ -49,18 +49,20 @@ function RunMultipathRouting()
 
     -- Create interface routing tables
     for _, ifn in pairs(WANIF) do
-        ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+        if if_exists(ifn) then
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
-        execute(string.format("%s route flush table %s", IPBIN, t))
-        execute(string.format("%s route ls table main | grep -Ev ^default | while read LINE; do " ..
-            "HOST=$(echo $LINE | awk '{ print $1 }'); DEV=$(echo $LINE | awk '{ print $3 }'); " ..
-            "if [ \"$HOST\" == \"%s\" -a \"$DEV\" != \"%s\" ]; then continue; fi; " ..
-            "%s route add table %d $LINE; done",
-            IPBIN, GetInterfaceGateway(ifn), ifn, IPBIN, t))
-        execute(string.format("%s route add table %d default via %s dev %s",
-            IPBIN, t, GetInterfaceGateway(ifn), ifn))
+            execute(string.format("%s route flush table %s", IPBIN, t))
+            execute(string.format("%s route ls table main | grep -Ev ^default | while read LINE; do " ..
+                "HOST=$(echo $LINE | awk '{ print $1 }'); DEV=$(echo $LINE | awk '{ print $3 }'); " ..
+                "if [ \"$HOST\" == \"%s\" -a \"$DEV\" != \"%s\" ]; then continue; fi; " ..
+                "%s route add table %d $LINE; done",
+                IPBIN, GetInterfaceGateway(ifn), ifn, IPBIN, t))
+            execute(string.format("%s route add table %d default via %s dev %s",
+                IPBIN, t, GetInterfaceGateway(ifn), ifn))
 
-        t = t + 1
+            t = t + 1
+        end
     end
 end
 

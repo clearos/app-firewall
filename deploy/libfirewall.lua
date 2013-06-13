@@ -921,10 +921,12 @@ function ResolveRules()
         elseif b_and(r_type, tonumber(os.getenv("FWR_ENABLED"))) ~= 0 and
             b_and(r_type, tonumber(os.getenv("FWR_EXTERNAL_ADDR"))) ~= 0 then
             for __, ifn in pairs(WANIF) do
-                ip, ___, ___, ___ = GetInterfaceInfo(ifn)
-                rule = string.format("||0x%08x|%d|%s|%s|%s",
-                    r_type, r_proto, ip, r_port, r_param)
-                table.insert(RULES, rule)
+                if if_exists(ifn) then
+                    ip, ___, ___, ___ = GetInterfaceInfo(ifn)
+                    rule = string.format("||0x%08x|%d|%s|%s|%s",
+                        r_type, r_proto, ip, r_port, r_param)
+                    table.insert(RULES, rule)
+                end
             end
         else
             table.insert(RULES, rule)
