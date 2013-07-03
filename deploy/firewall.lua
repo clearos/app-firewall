@@ -927,7 +927,7 @@ function RunPortForwardRules()
             end
 
             for __, ifn in pairs(LANIF) do
-                if ifn_eixsts(ifn) then
+                if if_exists(ifn) then
                     ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
                     for ___, ifn_wan in pairs(WANIF) do
