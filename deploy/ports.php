@@ -47,6 +47,7 @@ $ports[] = array('normal',  'TCP', '993',   'IMAPS');
 $ports[] = array('normal',  'TCP', '995',   'POP3S');
 $ports[] = array('normal',  'TCP', '1080',  'Proxy/SOCKS');
 $ports[] = array('normal',  'UDP', '1194',  'OpenVPN');
+$ports[] = array('normal',  'TCP', '1194',  'OpenVPN TCP');
 $ports[] = array('normal',  'TCP', '1214',  'KaZaa/Morpheus');
 $ports[] = array('normal',  'TCP', '1863',  'MSN');
 $ports[] = array('normal',  'TCP', '1875',  'ClearSDN');
