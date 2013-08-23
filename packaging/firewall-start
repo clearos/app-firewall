@@ -218,7 +218,6 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
         for FW_APP in $FW_APP_RULES; do
             source $FW_APP || RC=1
             /usr/bin/logger -p local6.notice -t firewall "Running $FW_APP"
-            /usr/bin/logger -p local6.notice -t firewall -f $FW_APP
         done
     else
         RC=1
