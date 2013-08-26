@@ -657,11 +657,12 @@ function RunIncomingAllowed()
 
         -- Do not masquerade VPN traffic
         iptables("nat", "-A POSTROUTING -m policy --dir out --pol ipsec -j " .. FW_ACCEPT)
+    end
 
-        if FW_MODE == "gateway" or FW_MODE == "dmz" then
-            -- Include tunnel interfaces (OpenVPN)
-            iptables("nat", "-A POSTROUTING -o tun+ -j " .. FW_ACCEPT)
-        end
+    -- OpenVPN server
+    if FW_MODE == "gateway" or FW_MODE == "dmz" then
+        -- Include tunnel interfaces (OpenVPN)
+        iptables("nat", "-A POSTROUTING -o tun+ -j " .. FW_ACCEPT)
     end
 end
 
