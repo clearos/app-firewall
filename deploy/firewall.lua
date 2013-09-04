@@ -80,7 +80,11 @@ function TablePrint(t)
     local v
     local c = 0
     for k, v in pairs(t) do
-        debug(string.format("%4d: %20s => %s", c, k, v))
+        if(type(v) == 'table') then
+            TablePrint(v)
+        else
+            debug(string.format("%4d: %20s => %s", c, k, v))
+        end
         c = c + 1
     end
 end
