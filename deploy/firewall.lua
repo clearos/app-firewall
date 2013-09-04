@@ -81,7 +81,9 @@ function TablePrint(t)
     local c = 0
     for k, v in pairs(t) do
         if(type(v) == 'table') then
+            debug(string.format("%4d: %20s => {", c, k))
             TablePrint(v)
+            debug(string.format("%26s", "}"))
         else
             debug(string.format("%4d: %20s => %s", c, k, v))
         end
@@ -1485,6 +1487,12 @@ function RunBandwidthEngine()
     -- Remove IMQ module
     execute(RMMOD .. " imq 2>/dev/null");
 
+    -- Remove any qdisc associated with all external interfaces
+    for _, ifn in pairs(WANIF_CONFIG) do
+        execute(TCBIN .. " qdisc del dev " .. ifn .. " root >/dev/null 2>&1")
+    end
+
+    -- If QoS is enabled, check for at least one configured external interface
     if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
         if table.getn(WANIF) == 0 then
             echo("No WAN interfaces up or configured, not starting bandwidth manager")
@@ -1492,10 +1500,10 @@ function RunBandwidthEngine()
         end
     end
 
+    -- Run either the internal (old) or external bandwidth engine
     if BANDWIDTH_QOS == "on" then
         RunBandwidthInternal()
     elseif QOS_ENABLE == "on" then
-        -- Start external QoS Manager
         bwx_init = assert(loadfile(QOS_ENGINE))
         bwx_init()
         RunBandwidthExternal()
@@ -2094,7 +2102,6 @@ function RunOneToOneNat()
     end
 
     -- Initialize NAT address WAN tables
-    --for _, ifn_wan in pairs(WANIF) do
     for _, ifn_wan in pairs(WANIF_CONFIG) do
         nat_addr[ifn_wan] = {}
     end
@@ -2135,7 +2142,7 @@ function RunOneToOneNat()
     -- Create aliases
     for __, ifn_wan in pairs(WANIF) do
         count = 200
-        if if_exists(ifn_wan) then
+        if if_exists(ifn_wan) and nat_addr[ifn_wan] ~= nil then
             ___, netmask, ___, ___ = GetInterfaceInfo(ifn_wan)
             for ____, ip in pairs(nat_addr[ifn_wan]) do
                 echo("Creating alias IP address for 1-to-1 NAT: " .. ip)
