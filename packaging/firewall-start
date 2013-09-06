@@ -130,6 +130,9 @@ export MODE EXTIF LANIF HOTIF DMZIF WIFIF BANDWIDTH_QOS BANDWIDTH_UPSTREAM \
     MULTIPATH_WEIGHTS RULES MULTIPATH_SKIP_DOWN_WANIF FW_LOG_DROPS \
     SYSWATCH_WANIF EGRESS_FILTERING PROTOCOL_FILTERING
 
+# Panic stamp file path
+FW_PANIC_STAMP="/var/state/firewall/panic-stamp"
+
 # Panic mode rules.  If the firewall fails, then we run these rules to ensure
 # we have something sane configured.
 RunPanicRules() {
@@ -137,6 +140,9 @@ RunPanicRules() {
 
     echo "Running firewall panic mode..."
     /usr/bin/logger -p $FW_FACILITY.error -t firewall "Running firewall panic mode..."
+
+    # Touch panic file.  Signals applications that there is something wrong.
+    touch "$FW_PANIC_STAMP"
 
     for TABLE in filter nat mangle; do
         $IPTABLES -t $TABLE -F  # Flush all previous rules.
@@ -187,9 +193,16 @@ RC=0
 if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
     trap 'rm -f "$FW_LOCKFILE"; exit $RC' INT TERM EXIT
 
+    if [ x$MULTIPATH_SYNC != "xtrue" ]; then
+        # Remove panic stamp file
+        rm -f "$FW_PANIC_STAMP"
+    fi
+
     if ($APP_FW -s $@ $APP_LUA); then
-        rm -f "$FW_LOCKFILE"
+
+        # Exit here if we were invoked only to sync multipath routing
         if [ x$MULTIPATH_SYNC == "xtrue" ]; then
+            rm -f "$FW_LOCKFILE"
             exit $RC
         fi
 
@@ -221,11 +234,12 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
         done
     else
         RC=1
-        rm -f "$FW_LOCKFILE"
         if [ x$MULTIPATH_SYNC != "xtrue" ]; then
             RunPanicRules
         fi
     fi
+
+    rm -f "$FW_LOCKFILE"
 else
     echo "Failed to acquire lock: $FW_LOCKFILE (held by $(cat $FW_LOCKFILE))"
     exit 1

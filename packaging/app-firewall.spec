@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 1.5.1
+Version: 1.5.2
 Release: 1%{dist}
 Summary: Firewall - Core
 License: LGPLv3
@@ -35,6 +35,7 @@ cp -r * %{buildroot}/usr/clearos/apps/firewall/
 
 install -d -m 0755 %{buildroot}/etc/clearos/firewall.d
 install -d -m 0755 %{buildroot}/var/clearos/firewall
+install -d -m 0755 %{buildroot}/var/state/firewall
 install -D -m 0644 packaging/filewatch-firewall.conf %{buildroot}/etc/clearsync.d/filewatch-firewall.conf
 install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
 install -D -m 0644 packaging/firewall.conf %{buildroot}/etc/clearos/firewall.conf
@@ -69,6 +70,7 @@ exit 0
 %dir /usr/clearos/apps/firewall
 %dir /etc/clearos/firewall.d
 %dir /var/clearos/firewall
+%dir /var/state/firewall
 /usr/clearos/apps/firewall/deploy
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
