@@ -2595,6 +2595,8 @@ function RunMultipath()
     local r_port
     local r_param
 
+    echo("Running multipath")
+
     -- Remove rules
     execute(IPBIN .. " rule | grep -Ev '(local|main|default)' | " ..
         "while read PRIO RULE; do " .. IPBIN .. " rule del prio ${PRIO%%:*} 2>/dev/null; done")
@@ -2610,15 +2612,20 @@ function RunMultipath()
     if table.getn(WANIF_CONFIG) > 1 then
         for _, ifn in pairs(WANIF_CONFIG) do
             if if_exists(ifn) then
-                ip, netmask, network, prefix = GetInterfaceInfo(ifn)
-
                 execute(string.format("%s route flush table %d", IPBIN, t))
-                execute(string.format("%s rule add prio %d from %s/%s table %d",
-                    IPBIN, t, ip, prefix, t))
-                execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
-                    IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
-                execute(string.format("%s route append prohibit default table %d metric 1 proto static",
-                    IPBIN, t))
+
+                if if_address(ifn) ~= nil then
+                    echo(string.format("Creating routing table for interface %s", ifn))
+
+                    ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+
+                    execute(string.format("%s rule add prio %d from %s/%s table %d",
+                        IPBIN, t, ip, prefix, t))
+                    execute(string.format("%s route add default via %s dev %s src %s proto static table %d",
+                        IPBIN, GetInterfaceGateway(ifn), ifn, ip, t))
+                    execute(string.format("%s route append prohibit default table %d metric 1 proto static",
+                        IPBIN, t))
+                end
 
                 t = t + 1
             end
