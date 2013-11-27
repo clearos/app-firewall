@@ -6,7 +6,7 @@
 
 $app['basename'] = 'firewall';
 $app['version'] = '1.5.10';
-$app['release'] = '1';
+$app['release'] = '2';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
 $app['license'] = 'GPLv3';
@@ -35,7 +35,7 @@ $app['requires'] = array(
 $app['core_requires'] = array(
     'app-network-core',
     'csplugin-filewatch',
-    'firewall >= 1.4.7-17',
+    'firewall >= 1.4.7-21',
     'iptables',
 );
 

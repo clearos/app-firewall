@@ -91,6 +91,46 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- TableCount
+--
+-- Returns the number of items in a dictionary table (where getn doesn't work).
+--
+------------------------------------------------------------------------------
+
+function TableCount(t)
+    local k
+    local v
+    local c = 0
+    for k, v in pairs(t) do c = c + 1 end
+    return c
+end
+
+------------------------------------------------------------------------------
+--
+-- TablePrint
+--
+-- Print contents of a dictionary table to assist debugging.
+--
+------------------------------------------------------------------------------
+
+function TablePrint(t)
+    local k
+    local v
+    local c = 0
+    for k, v in pairs(t) do
+        if(type(v) == 'table') then
+            debug(string.format("%4d: %20s => {", c, k))
+            TablePrint(v)
+            debug(string.format("%26s", "}"))
+        else
+            debug(string.format("%4d: %20s => %s", c, k, v))
+        end
+        c = c + 1
+    end
+end
+
+------------------------------------------------------------------------------
+--
 -- ValidateRule
 --
 -- Perform a series of sanity checks (address resolution) on a rule.  If the
@@ -226,6 +266,8 @@ function LoadEnvironment()
     HOTIF = os.getenv("HOTIF")
     DMZIF = os.getenv("DMZIF")
     WIFIF = os.getenv("WIFIF")
+
+    IFCFG = EnumerateInterfaceConfigs()
 
     BANDWIDTH_QOS = os.getenv("BANDWIDTH_QOS")
     BANDWIDTH_UPSTREAM = os.getenv("BANDWIDTH_UPSTREAM")
@@ -512,6 +554,65 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- EnumerateInterfaceConfigs
+--
+-- Returns an array of interface configurations from:
+-- /etc/sysconfig/network-scripts/ifcfg-???
+--
+------------------------------------------------------------------------------
+
+function EnumerateInterfaceConfigs()
+    local f
+    local ifn
+    local dev
+    local fname
+    local key
+    local value
+    local keys = { "eth", "type", "bootproto", "ipaddr", "netmask", "gateway" }
+    local ifn_table = {}
+
+    for fname in dir("/etc/sysconfig/network-scripts/") do
+        _, __, ifn = string.find(fname, "ifcfg%-([%w:%.]+)")
+        if ifn ~= nil then
+            dev = ifn
+            f = io.open("/etc/sysconfig/network-scripts/" .. fname)
+
+            if f ~= nil then
+                for line in f:lines() do
+                    _, _, value = string.find(line,
+                        "DEVICE%s*=%s*\"*([%w%.%-%_:]+)\"*")
+                    if value ~= nil then
+                        dev = value
+                        break
+                    end
+                end
+
+                ifn_table[dev] = {}
+                ifn_table[dev]["config_ifn"] = ifn
+                for _, key in pairs(keys) do
+                    ifn_table[dev][key] = nil
+                end
+
+                f:seek("set")
+                for line in f:lines() do
+                    for _, key in pairs(keys) do
+                        _, _, value = string.find(line,
+                            string.upper(key) .. "%s*=%s*\"*([%w%.%-%_:]+)\"*")
+                        if (value ~= nil) then
+                            ifn_table[dev][key] = string.lower(value)
+                            break
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return ifn_table
+end
+
+------------------------------------------------------------------------------
+--
 -- GetInterfaceGateway
 --
 -- Returns the gateway for the given network interface.  If none is found in
@@ -523,7 +624,7 @@ end
 
 function GetInterfaceGateway(ifn)
     local f
-    local gw
+    local gw = nil
     local netmask = if_netmask(ifn)
 
     -- PPPOEKLUDGE: Return the peer IP address for PPP interfaces 
@@ -531,15 +632,8 @@ function GetInterfaceGateway(ifn)
         return if_dst_address(ifn)
     end
 
-    f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
-
-    if f ~= nil then
-        for line in f:lines() do
-            _, _, gw = string.find(line, "GATEWAY%s*=%s*\"*(%d+\.%d+\.%d+\.%d+)\"*")
-            if gw ~= nil then break end
-        end
-
-        io.close(f)
+    if IFCFG[ifn] ~= nil and IFCFG[ifn]["gateway"] ~= nil then
+        gw = IFCFG[ifn]["gateway"]
     end
 
     if gw ~= nil then return gw end
@@ -569,17 +663,10 @@ end
 
 function GetPhysicalInterface(ifn)
     local f
-    local dev
+    local dev = nil
 
-    f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
-
-    if f ~= nil then
-        for line in f:lines() do
-            _, _, dev = string.find(line, "ETH%s*=%s*\"*(%w+)\"*")
-            if dev ~= nil then break end
-        end
-
-        io.close(f)
+    if IFCFG[ifn] ~= nil and IFCFG[ifn]["eth"] ~= nil then
+        dev = IFCFG[ifn]["eth"]
     end
 
     if dev == nil then dev = ifn end
@@ -697,7 +784,7 @@ end
 ------------------------------------------------------------------------------
 
 function NetworkInterfaces()
-    local i, f, t
+    local i, t
     local ifn, ifn_ppp, ifn_wan
     local ifn_pppoe = {}
     local pppoe_list = {}
@@ -800,13 +887,9 @@ function NetworkInterfaces()
         for _, ifn in pairs(t) do
             if if_exists(ifn) then
                 -- Test if network configuration file exists
-                f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
-
-                if f == nil then
+                if IFCFG[ifn] == nil then
                     echo("Warning: LAN interface is not configured: " .. ifn)
                 else
-                    io.close(f)
-
                     -- Test if interface has a set address and is up
                     if if_address(ifn) == nil then
                         echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
@@ -828,13 +911,9 @@ function NetworkInterfaces()
         for _, ifn in pairs(t) do
             if if_exists(ifn) then
                 -- Test if network configuration file exists
-                f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
-
-                if f == nil then
+                if IFCFG[ifn] == nil then
                     echo("Warning: LAN interface is not configured: " .. ifn)
                 else
-                    io.close(f)
-
                     -- Test if interface has a set address and is up
                     if if_address(ifn) == nil then
                         echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
@@ -856,13 +935,9 @@ function NetworkInterfaces()
         for _, ifn in pairs(t) do
             if if_exists(ifn) then
                 -- Test if network configuration file exists
-                f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
-
-                if f == nil then
+                if IFCFG[ifn] == nil then
                     echo("Warning: DMZ interface is not configured: " .. ifn)
                 else
-                    io.close(f)
-
                     -- Test if interface has a set address and is up
                     if if_address(ifn) == nil then
                         echo("Failed to detect IP address for DMZ device: " .. ifn)
@@ -1003,5 +1078,9 @@ function GetMemInfo()
 
     return total
 end
+
+-- Debug
+-- configs = EnumerateInterfaceConfigs()
+-- TablePrint(configs)
 
 -- vi: expandtab shiftwidth=4 softtabstop=4 tabstop=4

@@ -2,7 +2,7 @@
 Name: app-firewall
 Epoch: 1
 Version: 1.5.10
-Release: 1%{dist}
+Release: 2%{dist}
 Summary: Firewall - Core
 License: LGPLv3
 Group: ClearOS/Libraries
@@ -17,7 +17,7 @@ Summary: Firewall - Core
 Requires: app-base-core
 Requires: app-network-core
 Requires: csplugin-filewatch
-Requires: firewall >= 1.4.7-17
+Requires: firewall >= 1.4.7-21
 Requires: iptables
 
 %description core
