@@ -1,8 +1,8 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 1.5.10
-Release: 2%{dist}
+Version: 1.5.15
+Release: 1%{dist}
 Summary: Firewall - Core
 License: LGPLv3
 Group: ClearOS/Libraries
@@ -66,7 +66,6 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/firewall/packaging
-%exclude /usr/clearos/apps/firewall/tests
 %dir /usr/clearos/apps/firewall
 %dir /etc/clearos/firewall.d
 %dir /var/clearos/firewall
