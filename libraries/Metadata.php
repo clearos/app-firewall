@@ -143,11 +143,13 @@ class Metadata extends Engine
     /**
      * Returns the pre-defined list of ports/and services.
      *
+     * @param string $protocol protocol filter
+     *
      * @return array list of pre-defined ports
      * @throws Engine_Exception
      */
 
-    public function get_standard_service_list()
+    public function get_standard_service_list($protocol = NULL)
     {
         clearos_profile(__METHOD__, __LINE__);
 
@@ -158,11 +160,14 @@ class Metadata extends Engine
         $hash_services = array();
         $service_list = array();
 
-        foreach ($this->ports as $portinfo)
-            $hash_services[$portinfo[3]] = TRUE;
+        foreach ($this->ports as $portinfo) {
+            if (empty($protocol) || ($protocol === $portinfo[1]))
+                $hash_services[$portinfo[3]] = TRUE;
+        }
 
-        while (list($key, $value) = each($hash_services))
+        while (list($key, $value) = each($hash_services)) {
             array_push($service_list, $key);
+        }
 
         sort($service_list);
 

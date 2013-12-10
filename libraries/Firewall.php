@@ -203,17 +203,19 @@ class Firewall extends Daemon
     /**
      * Returns the pre-defined list of ports/and services.
      *
+     * @param string $protocol protocol filter
+     *
      * @return array list of pre-defined ports
      * @throws Engine_Exception
      */
 
-    public function get_standard_service_list()
+    public function get_standard_service_list($protocol = NULL)
     {
         clearos_profile(__METHOD__, __LINE__);
 
         $metadata = new Metadata();
         
-        return $metadata->get_standard_service_list();
+        return $metadata->get_standard_service_list($protocol);
     }
 
     /**
