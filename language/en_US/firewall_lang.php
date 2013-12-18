@@ -35,6 +35,7 @@ $lang['firewall_name_invalid'] = 'Name is invalid.';
 $lang['firewall_network_interface_invalid'] = 'Nework interface is invalid.';
 $lang['firewall_nickname_invalid'] = 'Nickname can only contain alphanumerics and dashes.';
 $lang['firewall_nickname'] = 'Nickname';
+$lang['firewall_panic'] = 'Firewall is in panic mode!  If your system is in gateway mode, no traffic will be routed and all firewall rules are disabled.  Webconfig (port 81) and SSH (port 22) have been allowed to provide access to the server to help you resolve the issue.  If you just added a firewall rule, try removing it or view the system log file for details on what went wrong.';
 $lang['firewall_port_invalid'] = 'Invalid port number.';
 $lang['firewall_port_invalid'] = 'Port is invalid.';
 $lang['firewall_port_is_out_of_range'] = 'Port is out of range.';

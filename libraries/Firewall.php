@@ -106,6 +106,7 @@ class Firewall extends Daemon
 
     // Files and paths
     const FILE_CONFIG = '/etc/clearos/firewall.conf';
+    const FILE_PANIC = '/var/state/firewall/panic-stamp';
 
     // Roles
     const ROLE_EXTERNAL = 'EXTIF';
@@ -302,6 +303,22 @@ class Firewall extends Daemon
         }
 
         return $protocol_number;
+    }
+
+    /**
+     * Determine if firewall is in panic mode
+     *
+     * @return boolean TRUE if firewall is in panic mode
+     */
+
+    public function is_panic()
+    {
+        clearos_profile(__METHOD__, __LINE__);
+
+        $file = new File(self::FILE_PANIC);
+        if ($file->exists())
+            return TRUE;
+        return FALSE;
     }
 
     ///////////////////////////////////////////////////////////////////////////
