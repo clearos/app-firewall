@@ -2264,16 +2264,8 @@ function RunMasquerading()
 
     -- TODO: migrate miniupnpd to plugin framework
     if table.getn(WANIF) == 0 then
-        if table.getn(WANIF_CONFIG) == 0 then
-            echo("Disabling NAT - no active WANS")
-        else
-            echo(string.format("Enabling standby NAT on WAN interface %s", WANIF_CONFIG[1]))
-            iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", WANIF_CONFIG[1]))
-        end
-    elseif MULTIPATH == "off" or table.getn(WANIF) == 1 then
-        echo(string.format("Enabling NAT on WAN interface %s", WANIF[1]))
-        iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", WANIF[1]))
-    elseif MULTIPATH == "on" then
+        echo("Disabling NAT - no active WANS")
+    else
         for _, ifn_wan in pairs(WANIF) do
             echo(string.format("Enabling NAT on WAN interface %s", ifn_wan))
             iptables("nat", string.format("-A POSTROUTING -o %s -j MASQUERADE", ifn_wan))
@@ -2310,18 +2302,8 @@ function RunUpnp()
 
     -- The logic is straight from RunMasquerading
     if table.getn(WANIF) == 0 then
-        if table.getn(WANIF_CONFIG) == 0 then
-            echo("Disabling UPnP - no active WANS")
-        else
-            echo(string.format("Enabling standby UPnP on WAN interface %s", WANIF_CONFIG[1]))
-            iptables("nat", string.format("-A PREROUTING -i %s -j MINIUPNPD", WANIF_CONFIG[1]))
-            iptables("filter", string.format("-A FORWARD -i %s ! -o %s -j MINIUPNPD", WANIF_CONFIG[1], WANIF_CONFIG[1]))
-        end
-    elseif MULTIPATH == "off" or table.getn(WANIF) == 1 then
-        echo(string.format("Enabling UPnP on WAN interface %s", WANIF[1]))
-        iptables("nat", string.format("-A PREROUTING -i %s -j MINIUPNPD", WANIF[1]))
-        iptables("filter", string.format("-A FORWARD -i %s ! -o %s -j MINIUPNPD", WANIF[1], WANIF[1]))
-    elseif MULTIPATH == "on" then
+        echo("Disabling UPnP - no active WANS")
+    else
         for _, ifn_wan in pairs(WANIF) do
             echo(string.format("Enabling UPnP on WAN interface %s", ifn_wan))
             iptables("nat", string.format("-A PREROUTING -i %s -j MINIUPNPD", ifn_wan))
@@ -2369,7 +2351,7 @@ function RunForwardingDefaults()
     -- Allow already established connections
     iptables("filter", "-A FORWARD -m state --state ESTABLISHED,RELATED -j " .. accept_target)
 
-    -- Allow forwarding on trusted interfaces (! WANIF)
+    -- Allow forwarding on trusted interfaces
     for _, ifn in pairs(DMZIF) do
         iptables("filter", "-A FORWARD -i " .. ifn .. " -j " .. accept_target)
     end
@@ -2592,7 +2574,7 @@ function RunMultipath()
         end
     end
 
-    if MULTIPATH ~= "on" or table.getn(WANIF) < 2 then
+    if table.getn(WANIF) < 2 then
         -- Flush cached routes so our changes will take effect
         execute(IPBIN .. " route flush cache")
         return
@@ -2625,19 +2607,30 @@ function RunMultipath()
     t = 250
     execute(IPBIN .. " rule add prio " .. t .. " table " .. t)
 
-    for _, ifn in pairs(WANIF) do
-        for __, i in pairs(MULTIPATH_WEIGHTS) do
-            ___, ___, ifn_weight, weight = string.find(i, "(%w+)|(%w+)")
-            if ifn == ifn_weight then break else weight = 1 end
+    if MULTIPATH ~= "on" or table.getn(SYSWATCH_WANIF) < 2 then
+    	if table.getn(SYSWATCH_WANIF) < 1 then
+    		gateway = GetInterfaceGateway(WANIF_CONFIG[1])
+    	else
+    		gateway = GetInterfaceGateway(SYSWATCH_WANIF[1])
+    	end
+		execute(IPBIN .. " route flush table " .. t)
+		execute(IPBIN .. " route add default via " .. gateway .. " table " .. t)
+		execute(IPBIN .. " route add default via " .. gateway)
+	else
+        for _, ifn in pairs(WANIF) do
+            for __, i in pairs(MULTIPATH_WEIGHTS) do
+                ___, ___, ifn_weight, weight = string.find(i, "(%w+)|(%w+)")
+                if ifn == ifn_weight then break else weight = 1 end
+            end
+
+            -- Add gateway to hop list
+            hops = string.format("%s nexthop via %s dev %s weight %d",
+                hops, GetInterfaceGateway(ifn), ifn, weight)
         end
 
-        -- Add gateway to hop list
-        hops = string.format("%s nexthop via %s dev %s weight %d",
-            hops, GetInterfaceGateway(ifn), ifn, weight)
-    end
-
-    execute(IPBIN .. " route flush table " .. t)
-    execute(IPBIN .. " route add default table " .. t .. " proto static " .. hops)
+        execute(IPBIN .. " route flush table " .. t)
+        execute(IPBIN .. " route add default table " .. t .. " proto static " .. hops)
+	end
 
     -- Create interface chains
     mark = tonumber("0x8000")
@@ -2942,6 +2935,16 @@ function ShowFirewallMode()
             ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
             echo(string.format("Detected WAN info - %s %s on network %s/%s",
+                ifn, ip, network, prefix))
+        end
+    end
+
+    -- WAN BACKUP info
+    for _, ifn in pairs(BAKIF) do
+        if if_exists(ifn) then
+            ip, netmask, network, prefix = GetInterfaceInfo(ifn)
+
+            echo(string.format("Detected Backup WAN info - %s %s on network %s/%s",
                 ifn, ip, network, prefix))
         end
     end

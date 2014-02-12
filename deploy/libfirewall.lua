@@ -772,10 +772,13 @@ end
 -- NetworkInterfaces
 --
 -- The following interfaces are exported from the firewall configuration file:
--- WANIF     - WAN interface(s) (EXTIF in /etc/firewall)
+-- WANIF_CONFIG     - all WAN interface(s) (EXTIF in /etc/firewall)
+-- WANIF     - WAN interface(s) which are up
+-- SYSWATCH_WANIF  - all primary WAN interfaces (from syswatch)
 -- LANIF     - LAN interface(s)
 -- DMZIF     - DMZ interface(s)
 -- WIFIF     - Wireless interface
+-- BAKIF     - Backup WAN interfaces
 --
 -- + Make sure we have an IP address set on our WAN interface.
 -- + Make sure LAN and DMZ interfaces are configured (network-scripts present).
@@ -800,9 +803,16 @@ function NetworkInterfaces()
     end
 
     -- All interfaces without a set role default to a LAN interface
-    for _, ifn in pairs(SYSWATCH_WANIF) do
+    BAKIF = {}
+    for _, ifn in pairs(WANIF) do
         if string.len(ifn) ~= 0 and if_exists(ifn) then
             table.insert(difs, ifn)
+            -- Interfaces in WANIF and not in SYSWATCH_WANIF must be backup interfaces
+            f = true
+		    for __, sifn in pairs(SYSWATCH_WANIF) do
+		    	if ifn == sifn then f = false end
+            end
+            if f then table.insert(BAKIF, ifn) end
         end
     end
 
@@ -848,11 +858,14 @@ function NetworkInterfaces()
     end
 
     WANIF_CONFIG = WANIF
-    WANIF = SYSWATCH_WANIF
 
     -- Display detected interface roles
     for _, ifn in pairs(WANIF) do
         echo("Detected WAN role for interface: " .. ifn)
+    end
+
+    for _, ifn in pairs(BAKIF) do
+        echo("Detected WAN backup role for interface: " .. ifn)
     end
 
     for _, ifn in pairs(LANIF) do
@@ -864,18 +877,9 @@ function NetworkInterfaces()
     end
 
     -- Ensure address of WAN interfaces are set
-    t = WANIF; WANIF = {}
-    for _, ifn in pairs(t) do
-        if if_exists(ifn) then
-            if if_address(ifn) == nil then
-                echo("Failed to detect IP address for WAN interface: " .. ifn)
-            else
-                table.insert(WANIF, ifn)
-            end
-        else
-            echo("WAN interface doesn't exists: " .. ifn)
-        end
-    end
+    WANIF = PruneInterfaceTable(WANIF, "WAN")
+    SYSWATCH_WANIF = PruneInterfaceTable(SYSWATCH_WANIF, nil)
+    BAKIF = PruneInterfaceTable(BAKIF, nil)
 
     if table.getn(WANIF) == 0 then
         echo("WARNING: No configured WAN interfaces, continuing anyway...")
@@ -883,75 +887,57 @@ function NetworkInterfaces()
 
     -- Check LAN interface(s)
     if FW_MODE ~= "standalone" and FW_MODE ~= "trustedstandalone" then
-        t = LANIF; LANIF = {}
-        for _, ifn in pairs(t) do
-            if if_exists(ifn) then
-                -- Test if network configuration file exists
-                if IFCFG[ifn] == nil then
-                    echo("Warning: LAN interface is not configured: " .. ifn)
-                else
-                    -- Test if interface has a set address and is up
-                    if if_address(ifn) == nil then
-                        echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
-                    elseif if_isup(ifn) == false then
-                        echo("Warning: LAN interface seems to be down: " .. ifn)
-                    else
-                        table.insert(LANIF, ifn)
-                    end
-                end
-            else
-                echo("LAN interface doesn't exists: " .. ifn)
-            end
-        end
+        LANIF = PruneInterfaceTable(LANIF, "LAN")
     end
 
     -- Check Hot LAN interface(s)
     if FW_MODE ~= "standalone" and FW_MODE ~= "trustedstandalone" then
-        t = HOTIF; HOTIF = {}
-        for _, ifn in pairs(t) do
-            if if_exists(ifn) then
-                -- Test if network configuration file exists
-                if IFCFG[ifn] == nil then
-                    echo("Warning: LAN interface is not configured: " .. ifn)
-                else
-                    -- Test if interface has a set address and is up
-                    if if_address(ifn) == nil then
-                        echo("Warning: Failed to detect IP address for LAN device: " .. ifn)
-                    elseif if_isup(ifn) == false then
-                        echo("Warning: LAN interface seems to be down: " .. ifn)
-                    else
-                        table.insert(HOTIF, ifn)
-                    end
-                end
-            else
-                echo("HOTLAN interface doesn't exists: " .. ifn)
-            end
-        end
+        HOTIF = PruneInterfaceTable(HOTIF, "LAN")
     end
 
     -- Check DMZ interface(s)
     if FW_MODE == "dmz" then
-        t = DMZIF; DMZIF = {}
-        for _, ifn in pairs(t) do
+        DMZIF = PruneInterfaceTable(DMZIF, "DMZ")
+    end
+end
+
+------------------------------------------------------------------------------
+--
+-- PruneInterfaceTable
+--
+-- Remove interfaces with no IP address, or down from a table
+-- if message is not nil, echo a warning message explaining why an interface is removed from the table
+--
+------------------------------------------------------------------------------
+
+function PruneInterfaceTable(tab, message)
+	t = {}
+	for _, ifn in pairs(tab) do
+		m = nil
             if if_exists(ifn) then
                 -- Test if network configuration file exists
-                if IFCFG[ifn] == nil then
-                    echo("Warning: DMZ interface is not configured: " .. ifn)
+			f = io.open("/etc/sysconfig/network-scripts/ifcfg-" .. ifn)
+
+			if f == nil then
+				m = "interface is not configured: " .. ifn
                 else
+				io.close(f)
+
                     -- Test if interface has a set address and is up
                     if if_address(ifn) == nil then
-                        echo("Failed to detect IP address for DMZ device: " .. ifn)
+					m = "device has no IP address: " .. ifn
                     elseif if_isup(ifn) == false then
-                        echo("Warning: DMZ interface seems to be down: " .. ifn)
+					m = "interface seems to be down: " .. ifn
                     else
-                        table.insert(DMZIF, ifn)
+					table.insert(t, ifn)
                     end
                 end
             else
-                echo("DMZ interface doesn't exists: " .. ifn)
-            end
+			m = "interface doesn't exist: " .. ifn
         end
+		if m ~= nil and message ~= nil then echo("Warning: " .. message .. " " .. m) end
     end
+	return t
 end
 
 ------------------------------------------------------------------------------
