@@ -240,6 +240,31 @@ end
 
 ------------------------------------------------------------------------------
 --
+-- CalculateRateToQuantum
+--
+-- Calculate a suitable "r2q" value for HTB qdisc.
+--
+------------------------------------------------------------------------------
+
+function CalculateRateToQuantum(rate)
+    local r2q = 1
+    local quantum = 20000
+
+    while quantum > 1500 do
+        quantum = (rate * 1000 / 8) / r2q
+        r2q = r2q + 1
+    end
+
+    r2q = r2q - 2
+    quantum = (rate * 1000 / 8) / r2q
+    debug("Auto-r2q for minimum rate " .. rate ..
+        ": " .. r2q .. " (quantum: " .. quantum .. ")")
+
+    return r2q
+end
+
+------------------------------------------------------------------------------
+--
 -- LoadEnvironment
 --
 -- Load and parse environment variables as Lua globals
