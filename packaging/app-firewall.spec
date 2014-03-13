@@ -3,17 +3,22 @@ Name: app-firewall
 Epoch: 1
 Version: 1.5.20
 Release: 1%{dist}
-Summary: Firewall - Core
-License: LGPLv3
-Group: ClearOS/Libraries
-Source: app-firewall-%{version}.tar.gz
+Summary: Firewall
+License: GPLv3
+Group: ClearOS/Apps
+Source: %{name}-%{version}.tar.gz
 Buildarch: noarch
+Requires: %{name}-core = 1:%{version}-%{release}
+Requires: app-base
+Requires: app-network
 
 %description
 The core firewall engine for the system.
 
 %package core
 Summary: Firewall - Core
+License: LGPLv3
+Group: ClearOS/Libraries
 Requires: app-base-core
 Requires: app-network-core
 Requires: csplugin-filewatch
@@ -44,6 +49,9 @@ install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
 install -D -m 0755 packaging/snortsam-reblock %{buildroot}/usr/sbin/snortsam-reblock
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
 
+%post
+logger -p local6.notice -t installer 'app-firewall - installing'
+
 %post core
 logger -p local6.notice -t installer 'app-firewall-core - installing'
 
@@ -55,6 +63,11 @@ fi
 
 exit 0
 
+%preun
+if [ $1 -eq 0 ]; then
+    logger -p local6.notice -t installer 'app-firewall - uninstalling'
+fi
+
 %preun core
 if [ $1 -eq 0 ]; then
     logger -p local6.notice -t installer 'app-firewall-core - uninstalling'
@@ -62,6 +75,10 @@ if [ $1 -eq 0 ]; then
 fi
 
 exit 0
+
+%files
+%defattr(-,root,root)
+/usr/clearos/apps/firewall/views
 
 %files core
 %defattr(-,root,root)
