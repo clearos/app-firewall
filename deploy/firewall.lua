@@ -187,7 +187,7 @@ end
 -- DefineChains
 -- 
 -- Define any custom chains here.  Custom chains include:
--- + drop-lan      - for logging LAN traffic trying to escape the LAN
+-- + DROP-lan      - for logging LAN traffic trying to escape the LAN
 --
 -- Use the FW_DROP and FW_ACCEPT variable to override DROP and ACCEPT.  This
 -- can be handy for trouble-shooting.
@@ -204,11 +204,11 @@ function DefineChains()
     -- Create a default DROP chain for debugging
     if FW_DROP ~= "DROP" then
         for _, t in pairs(TABLES) do
-            iptc_create_chain(t, FW_DROP)
-            if FW_LOG_DROPS == "yes" then
-                iptables(t, "-A " .. FW_DROP .. " -j LOG --log-prefix \"Drop: \"")
+            if t ~= "nat" then
+                iptc_create_chain(t, FW_DROP)
+                iptables(t, "-A " .. FW_DROP .. " -j LOG --log-prefix \"Drop - " .. t .. ": \"")
+                iptables(t, "-A " .. FW_DROP .. " -j DROP")
             end
-            iptables(t, "-A " .. FW_DROP .. " -j DROP")
         end
     end
 
@@ -220,9 +220,11 @@ function DefineChains()
     end
 
     -- Create a chain for dropping services that shouldn't leave the LAN
-    iptc_create_chain("filter", "drop-lan")
-    -- iptables("filter", "-A drop-lan -j LOG --log-prefix \"Drop - LAN only: \"")
-    iptables("filter", "-A drop-lan -j DROP")
+    iptc_create_chain("filter", "DROP-lan")
+    if FW_LOG_DROPS == "yes" then
+        iptables("filter", "-A DROP-lan -j LOG --log-prefix \"Drop - LAN only: \"")
+    end
+    iptables("filter", "-A DROP-lan -j DROP")
 end
 
 ------------------------------------------------------------------------------
@@ -347,15 +349,15 @@ function RunCommonRules()
     echo("Running common rules")
 
     -- SYN bit issues
-    iptables("filter", "-A INPUT -m state --state INVALID -j DROP")
+    iptables("filter", "-A INPUT -m state --state INVALID -j " .. FW_DROP)
     iptables("filter",
         "-A INPUT -p tcp --tcp-flags SYN,ACK SYN,ACK -m state --state NEW -j REJECT --reject-with tcp-reset")
-    iptables("filter", "-A INPUT -p tcp ! --syn -m state --state NEW -j DROP")
+    iptables("filter", "-A INPUT -p tcp ! --syn -m state --state NEW -j " .. FW_DROP)
 
     -- Block addresses that should never show up on our WAN interface
     for _, ifn in pairs(WANIF_CONFIG) do
-        iptables("filter", "-A INPUT -i " .. ifn .. " -s 127.0.0.0/8 -j DROP")
-        iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j DROP")
+        iptables("filter", "-A INPUT -i " .. ifn .. " -s 127.0.0.0/8 -j " .. FW_DROP)
+        iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j " .. FW_DROP)
     end
 
     -- Allow everything on the loopback interface
