@@ -54,6 +54,7 @@ $lang['firewall_rule_invalid:'] = 'Rule is invalid:';
 $lang['firewall_rule_missing'] = 'No rule specified.';
 $lang['firewall_rule_not_found'] = 'Rule does not exist.';
 $lang['firewall_rule'] = 'Rule';
+$lang['firewall_rules'] = 'Rules';
 $lang['firewall_rules_not_defined'] = 'No rules defined.';
 $lang['firewall_service_invalid'] = 'Invalid standard service.';
 $lang['firewall_service'] = 'Service';
