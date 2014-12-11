@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '2.0.1';
+$app['version'] = '2.0.5';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -28,6 +28,10 @@ $app['menu_enabled'] = FALSE;
 
 $app['requires'] = array(
     'app-network',
+);
+
+$app['core_obsoletes'] = array(
+    'iptables-services',
 );
 
 $app['core_requires'] = array(

@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.0.1
+Version: 2.0.5
 Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
@@ -24,6 +24,7 @@ Requires: app-network-core
 Requires: csplugin-filewatch
 Requires: firewall >= 1.4.7-21
 Requires: iptables
+Obsoletes: iptables-services
 
 %description core
 The core firewall engine for the system.
