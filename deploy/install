@@ -6,3 +6,5 @@
 logger -p local6.notice -t installer "app-firewall-core - enabling firewall"
 /sbin/chkconfig --add firewall >/dev/null 2>&1
 /sbin/chkconfig firewall on >/dev/null 2>&1
+/sbin/chkconfig --add firewall6 >/dev/null 2>&1
+/sbin/chkconfig firewall6 on >/dev/null 2>&1

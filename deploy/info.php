@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '2.0.5';
+$app['version'] = '2.0.6';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -70,8 +70,20 @@ $app['core_file_manifest'] = array(
         'owner' => 'root',
         'group' => 'root',
     ),
+    'firewall.init' => array(
+        'target' => '/etc/rc.d/init.d/firewall6',
+        'mode' => '0755',
+        'owner' => 'root',
+        'group' => 'root',
+    ),
     'firewall-start' => array(
         'target' => '/usr/sbin/firewall-start',
+        'mode' => '0755',
+        'owner' => 'root',
+        'group' => 'root',
+    ),
+    'firewall-start' => array(
+        'target' => '/usr/sbin/firewall-start6',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',

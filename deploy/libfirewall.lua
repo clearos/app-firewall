@@ -284,6 +284,7 @@ function LoadEnvironment()
     -- Exported firewall configuration variables 
     FW_MODE = os.getenv("MODE")
     FW_ADHOC = os.getenv("FW_ADHOC")
+    FW_PROTO = os.getenv("FW_PROTO")
 
     WANIF = os.getenv("EXTIF")
     SYSWATCH_WANIF = os.getenv("SYSWATCH_WANIF")
@@ -349,6 +350,9 @@ function LoadEnvironment()
     -- Validate variables
     if FW_MODE == nil then error("MODE not defined")
     else debug("FW_MODE=" .. FW_MODE) end
+
+    if FW_PROTO == nil then error("FW_PROTO not defined")
+    else debug("FW_PROTO=" .. FW_PROTO) end
 
     if WANIF == nil then
         error("WANIF not defined")

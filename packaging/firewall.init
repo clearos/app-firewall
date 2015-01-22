@@ -7,14 +7,18 @@
 
 . /etc/init.d/functions
 
-FW_CONFIG=/etc/clearos/firewall.conf
+PROG="$(basename $0)"
+IPTABLES=/usr/sbin/iptables
 IPTABLES_START=/usr/sbin/firewall-start
-prog="firewall"
+if [ "$PROG" == "firewall6" ]; then
+	IPTABLES=/usr/sbin/ip6tables
+	IPTABLES_START=/usr/sbin/firewall-start6
+fi
 
 start() {
 	# don't do squat if we don't have the config file
 	if [ -f $IPTABLES_START ]; then
-		echo -n $"Starting $prog: "
+		echo -n $"Starting $PROG: "
 		$IPTABLES_START >/dev/null 2>&1
 		if [ $? -eq 0 ]; then
 			success
@@ -22,7 +26,7 @@ start() {
 			failure
 		fi
 		echo
-		touch /var/lock/subsys/iptables
+		touch /var/lock/subsys/$PROG
 
 		# Fix by arovuo, re-block IPs if any
 		[ -x /usr/sbin/snortsam-reblock ] && /usr/sbin/snortsam-reblock
@@ -30,7 +34,7 @@ start() {
 
 	# TODO/KLUDGE: remove stray configs from anaconda installer.
 	# This should be moved somewhere else (anaconda patch, syswatch)
-	for CONFIG in `ls /etc/sysconfig/network-scripts/ifcfg-* 2>/dev/null`; do
+	for CONFIG in $(ls /etc/sysconfig/network-scripts/ifcfg-* 2>/dev/null); do
 		NM_CONTROLLED=""
 		ONBOOT=""
 		source $CONFIG
@@ -41,26 +45,30 @@ start() {
 }
 
 stop() {
-	chains=`cat /proc/net/ip_tables_names 2>/dev/null`
-	for i in $chains; do iptables -t $i -F; done && \
+	chains="$(cat /proc/net/ip_tables_names 2>/dev/null)"
+	if [ "$PROG" == "firewall6" ]; then
+		chains="$(cat /proc/net/ip6_tables_names 2>/dev/null)"
+	fi
+	echo $chains
+	for i in $chains; do $IPTABLES -t $i -F; done && \
 		success $"Flushing all chains:" || \
 			failure $"Flushing all chains:"
-	for i in $chains; do iptables -t $i -X; done && \
+	for i in $chains; do $IPTABLES -t $i -X; done && \
 		success $"Removing user defined chains:" || \
 			failure $"Removing user defined chains:"
 	echo -n $"Resetting built-in chains to the default ACCEPT policy:"
-	iptables -P INPUT ACCEPT && \
-		iptables -P OUTPUT ACCEPT && \
-		iptables -P FORWARD ACCEPT && \
-		iptables -t nat -P PREROUTING ACCEPT && \
-		iptables -t nat -P POSTROUTING ACCEPT && \
-		iptables -t nat -P OUTPUT ACCEPT && \
-		iptables -t mangle -P PREROUTING ACCEPT && \
-		iptables -t mangle -P OUTPUT ACCEPT && \
+	$IPTABLES -P INPUT ACCEPT && \
+		$IPTABLES -P OUTPUT ACCEPT && \
+		$IPTABLES -P FORWARD ACCEPT && \
+		$IPTABLES -t nat -P PREROUTING ACCEPT && \
+		$IPTABLES -t nat -P POSTROUTING ACCEPT && \
+		$IPTABLES -t nat -P OUTPUT ACCEPT && \
+		$IPTABLES -t mangle -P PREROUTING ACCEPT && \
+		$IPTABLES -t mangle -P OUTPUT ACCEPT && \
 		success $"Resetting built-in chains to the default ACCEPT policy" || \
 			failure $"Resetting built-in chains to the default ACCEPT policy"
 	echo
-	rm -f /var/lock/subsys/iptables
+	rm -f /var/lock/subsys/$PROG
 }
 
 case "$1" in
@@ -77,19 +85,19 @@ case "$1" in
 	;;
 
   condrestart)
-	[ -e /var/lock/subsys/iptables ] && start
+	[ -e /var/lock/subsys/$PROG ] && start
 	;;
 
   status)
 	echo $"Table: filter"
-	iptables --list -v
-	echo $"Table: nat"
-	iptables -t nat --list -v
-	echo $"Table: mangle"
-	iptables -t mangle --list -v
+	$IPTABLES --list -v
+	echo -e $"\nTable: mangle"
+	$IPTABLES -t mangle --list -v
+	echo -e $"\nTable: nat"
+	$IPTABLES -t nat --list -v
 	;;
   *)
-	echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+	echo $"Usage: $PROG {start|stop|restart|condrestart|status}"
 	exit 1
 esac
 

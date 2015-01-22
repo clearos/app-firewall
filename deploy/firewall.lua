@@ -54,15 +54,26 @@
 ------------------------------------------------------------------------------
 --
 -- SetKernelSettings
+--
+------------------------------------------------------------------------------
+function SetKernelSettings()
+    if FW_PROTO == "ipv4" then
+        SetKernelSettings4()
+    else
+        SetKernelSettings6()
+    end
+end
+
+------------------------------------------------------------------------------
+--
+-- SetKernelSettings (IPv4)
 -- 
 -- Defines some default kernel settings...  mostly for added security and
 -- performance tuning.
 --
--- TODO: IPv6 support
---
 ------------------------------------------------------------------------------
 
-function SetKernelSettings()
+function SetKernelSettings4()
     echo("Setting kernel parameters")
 
     local neigh_gc_index = nil
@@ -130,6 +141,19 @@ function SetKernelSettings()
 
     -- Enable bad error message protection
     execute(SYSCTL .. " -w net.ipv4.icmp_ignore_bogus_error_responses=1 >/dev/null")
+end
+
+------------------------------------------------------------------------------
+--
+-- SetKernelSettings (IPv6)
+-- 
+-- Defines some default kernel settings...  mostly for added security and
+-- performance tuning.
+--
+------------------------------------------------------------------------------
+
+function SetKernelSettings6()
+    echo("Setting kernel parameters")
 end
 
 ------------------------------------------------------------------------------
@@ -241,10 +265,30 @@ function LoadKernelModules()
 
     echo("Loading kernel modules")
 
-    -- Add LOG target
-    table.insert(modules, "ipt_LOG")
-    -- Add REJECT target
-    table.insert(modules, "ipt_REJECT")
+    if FW_PROTO == "ipv4" then
+        -- Add LOG target
+        table.insert(modules, "ipt_LOG")
+        -- Add REJECT target
+        table.insert(modules, "ipt_REJECT")
+        -- Connection tracking
+        table.insert(modules, "nf_conntrack_ipv4")
+        -- IMQ for bandwidth QoS
+        if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
+            table.insert(modules, "ipt_IMQ")
+        end
+    else
+        -- Add LOG target
+        table.insert(modules, "ip6t_LOG")
+        -- Add REJECT target
+        table.insert(modules, "ip6t_REJECT")
+        -- Connection tracking
+        table.insert(modules, "nf_conntrack_ipv6")
+        -- IMQ for bandwidth QoS
+        if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
+            table.insert(modules, "ip6t_IMQ")
+        end
+    end
+
     -- Connection tracking for FTP
     table.insert(modules, "ip_conntrack_ftp")
     -- Connection tracking for IRC
@@ -254,10 +298,6 @@ function LoadKernelModules()
     table.insert(modules, "ppp_mppe")
     table.insert(modules, "ip_conntrack_proto_gre")
     table.insert(modules, "ip_conntrack_pptp")
-    -- IMQ for bandwidth QoS
-    if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
-        table.insert(modules, "ipt_IMQ")
-    end
 
     for _, m in pairs(modules) do
         execute(string.format("%s %s >/dev/null 2>&1", MODPROBE, m))
@@ -356,8 +396,13 @@ function RunCommonRules()
 
     -- Block addresses that should never show up on our WAN interface
     for _, ifn in pairs(WANIF_CONFIG) do
-        iptables("filter", "-A INPUT -i " .. ifn .. " -s 127.0.0.0/8 -j " .. FW_DROP)
-        iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j " .. FW_DROP)
+	if FW_PROTO == "ipv4" then
+            iptables("filter", "-A INPUT -i " .. ifn .. " -s 127.0.0.0/8 -j " .. FW_DROP)
+            iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j " .. FW_DROP)
+	else
+            iptables("filter", "-A INPUT -i " .. ifn .. " -s ::1/128 -j " .. FW_DROP)
+            iptables("filter", "-A INPUT -i " .. ifn .. " -s fe80::/10 -j " .. FW_DROP)
+        end
     end
 
     -- Allow everything on the loopback interface
@@ -386,7 +431,7 @@ function RunCommonRules()
 
     -- Allow DHCP and caching DNS on Hot LAN
     for _, ifn_hot in pairs(HOTIF) do
-        if if_exists(ifn_hot) then
+        if if_exists(ifn_hot) and FW_PROTO == "ipv4" then
             ip, netmask, network, prefix = GetInterfaceInfo(ifn_hot)
 
             -- Allow hosts on Hot LAN to use DHCP
@@ -422,7 +467,7 @@ function RunCommonRules()
     -- Allow DHCP and caching DNS on DMZ
     if FW_MODE == "dmz" then
         for _, ifn in pairs(DMZIF) do
-            if if_exists(ifn) then
+            if if_exists(ifn) and FW_PROTO == "ipv4" then
                 ip, netmask, network, prefix = GetInterfaceInfo(ifn)
 
                 -- Allow hosts on DMZ to use DHCP
@@ -441,19 +486,24 @@ function RunCommonRules()
     end
 
     for _, ifn in pairs(WANIF_CONFIG) do
-        -- Allow some ICMP (ping)
-        --
-        -- ICMP can be used for attacks.  We allow as little as possible.
-        -- The following are necessary ports we *can't* do without:
-        -- 0  Needed to ping hosts outside our network
-        -- 3  Needed by all networks
-        -- 8  Needed to ping this host (yes, it is an RFC requirement)
-        -- 11 Needed by the traceroute application
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 0 -j %s", ifn, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 3 -j %s", ifn, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 8 -j %s", ifn, FW_ACCEPT))
-        iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 11 -j %s", ifn, FW_ACCEPT))
-        iptables("filter", string.format("-A OUTPUT -o %s -p icmp -j %s", ifn, FW_ACCEPT))
+	if FW_PROTO == "ipv4" then
+            -- Allow some ICMP (ping)
+            --
+            -- ICMP can be used for attacks.  We allow as little as possible.
+            -- The following are necessary ports we *can't* do without:
+            -- 0  Needed to ping hosts outside our network
+            -- 3  Needed by all networks
+            -- 8  Needed to ping this host (yes, it is an RFC requirement)
+            -- 11 Needed by the traceroute application
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 0 -j %s", ifn, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 3 -j %s", ifn, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 8 -j %s", ifn, FW_ACCEPT))
+            iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 11 -j %s", ifn, FW_ACCEPT))
+            iptables("filter", string.format("-A OUTPUT -o %s -p icmp -j %s", ifn, FW_ACCEPT))
+	else
+            iptables("filter", string.format("-A INPUT -i %s -p ipv6-icmp -j %s", ifn, FW_ACCEPT))
+            iptables("filter", string.format("-A OUTPUT -o %s -p ipv6-icmp -j %s", ifn, FW_ACCEPT))
+	end
 
         -- Allow DHCP client to respond
         iptables("filter", "-A INPUT -i " .. ifn .. " -p udp --dport bootpc --sport bootps -j " .. FW_ACCEPT)
