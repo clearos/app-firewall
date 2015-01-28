@@ -1094,6 +1094,43 @@ function GetMemInfo()
     return total
 end
 
+------------------------------------------------------------------------------
+--
+-- IsServiceRunning
+--
+-- Returns true if service is running.
+--
+------------------------------------------------------------------------------
+
+function IsServiceRunning(service)
+    local pid = nil
+    local f = io.open(string.format("/var/run/%s.pid", service), "r")
+
+    if f == nil then return false end
+
+    for line in f:lines() do
+        _, _, pid = string.find(line, "^(%d+)")
+        if pid ~= nil then break end
+    end
+
+    io.close(f)
+
+    if pid == nil then return false end
+
+    f = io.open(string.format("/proc/%d/comm", pid), "r")
+    if f == nil then return false end
+
+    for line in f:lines() do
+        if string.find(line, service) ~= nil then
+            io.close(f)
+            return true
+        end
+    end
+
+    io.close(f)
+    return false
+end
+
 -- Debug
 -- configs = EnumerateInterfaceConfigs()
 -- TablePrint(configs)

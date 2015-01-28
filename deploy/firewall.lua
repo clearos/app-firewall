@@ -1014,6 +1014,7 @@ function RunProxyPorts()
     local r_port
     local r_param
     local bridge = false;
+    local SQUID_FILTER_PORT = "8080"
 
     echo("Running user-defined proxy rules")
 
@@ -1023,27 +1024,20 @@ function RunProxyPorts()
     -- GUI warned the user about disabling the content filter and transparent mode.  This step
     -- is now done here, while a clearsync plugin will watch squid.pid.
 
-    local squidpid=io.open("/var/run/squid.pid","r")
-    local dgpid=io.open("/var/run/dansguardian-av.pid","r")
-
-    local SQUID_FILTER_PORT="8080"
-
-    if dgpid~=nil then
+    if IsServiceRunning("dansguardian-av") then
         echo("Content filter is online")
-        io.close(dgpid) 
     else
         echo("Content filter is offline")
-        SQUID_FILTER_PORT=""
+        SQUID_FILTER_PORT = ""
     end
 
-    if squidpid~=nil then
+    if IsServiceRunning("squid") then
         echo("Web proxy is online")
-        io.close(squidpid) 
     else
         echo("Web proxy is offline")
-        SQUID_FILTER_PORT=""
-        SQUID_TRANSPARENT="off"
-        SQUID_USER_AUTHENTICATION="off"
+        SQUID_FILTER_PORT = ""
+        SQUID_TRANSPARENT = "off"
+        SQUID_USER_AUTHENTICATION = "off"
     end
 
     if FW_MODE == "trustedstandalone" and
