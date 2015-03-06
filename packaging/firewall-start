@@ -80,7 +80,7 @@ export SYSWATCH_STATE="/var/lib/syswatch/state"
 export TCBIN="/sbin/tc"
 
 # Logging
-FW_FACILITY=${FW_FACILITY:-"local6"}
+export FW_FACILITY=${FW_FACILITY:-"local6"}
 
 # Pretend mode?
 PRETEND=0
