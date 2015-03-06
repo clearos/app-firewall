@@ -47,6 +47,11 @@ $app['core_directory_manifest'] = array(
     '/var/state/firewall' => array(),
 );
 
+$app['core_symlinks'] = array(
+    '/etc/rc.d/init.d/firewall' => '/etc/rc.d/init.d/firewall6',
+    '/usr/sbin/firewall-start' => '/usr/sbin/firewall-start6'
+);
+
 $app['core_file_manifest'] = array(
     'local' => array(
         'target' => '/etc/clearos/firewall.d/local',
@@ -70,20 +75,8 @@ $app['core_file_manifest'] = array(
         'owner' => 'root',
         'group' => 'root',
     ),
-    'firewall.init' => array(
-        'target' => '/etc/rc.d/init.d/firewall6',
-        'mode' => '0755',
-        'owner' => 'root',
-        'group' => 'root',
-    ),
     'firewall-start' => array(
         'target' => '/usr/sbin/firewall-start',
-        'mode' => '0755',
-        'owner' => 'root',
-        'group' => 'root',
-    ),
-    'firewall-start' => array(
-        'target' => '/usr/sbin/firewall-start6',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',

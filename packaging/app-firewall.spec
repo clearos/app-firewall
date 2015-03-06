@@ -43,12 +43,14 @@ install -d -m 0755 %{buildroot}/etc/clearos/firewall.d
 install -d -m 0755 %{buildroot}/var/clearos/firewall
 install -d -m 0755 %{buildroot}/var/state/firewall
 install -D -m 0644 packaging/filewatch-firewall.conf %{buildroot}/etc/clearsync.d/filewatch-firewall.conf
-install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start6
+install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
 install -D -m 0644 packaging/firewall.conf %{buildroot}/etc/clearos/firewall.conf
-install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall6
+install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
 install -D -m 0755 packaging/snortsam-reblock %{buildroot}/usr/sbin/snortsam-reblock
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
+ln -s /etc/rc.d/init.d/firewall %{buildroot}/etc/rc.d/init.d/firewall6
+ln -s /usr/sbin/firewall-start %{buildroot}/usr/sbin/firewall-start6
 
 %post
 logger -p local6.notice -t installer 'app-firewall - installing'
@@ -92,9 +94,11 @@ exit 0
 /usr/clearos/apps/firewall/language
 /usr/clearos/apps/firewall/libraries
 /etc/clearsync.d/filewatch-firewall.conf
-/usr/sbin/firewall-start6
+/usr/sbin/firewall-start
 %config(noreplace) /etc/clearos/firewall.conf
-/etc/rc.d/init.d/firewall6
+/etc/rc.d/init.d/firewall
 %config(noreplace) /etc/clearos/firewall.d/local
 /usr/sbin/snortsam-reblock
 /etc/clearos/firewall.d/types
+/etc/rc.d/init.d/firewall6
+/usr/sbin/firewall-start6
