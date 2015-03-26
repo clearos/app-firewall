@@ -1121,7 +1121,7 @@ function IsServiceRunning(service)
     if f == nil then return false end
 
     for line in f:lines() do
-        if string.find(line, service) ~= nil then
+        if line == service then
             io.close(f)
             return true
         end
