@@ -3,7 +3,7 @@
 # Startup script to implement pre-defined firewall rules.
 #
 # chkconfig: 2345 13 91
-# description: Automates a packet filtering firewall with iptables.
+# description: ClearOS firewall
 
 . /etc/init.d/functions
 
