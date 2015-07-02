@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '2.0.21';
+$app['version'] = '2.0.22';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -39,6 +39,7 @@ $app['core_requires'] = array(
     'csplugin-filewatch',
     'firewall >= 1.4.7-21',
     'iptables',
+    'csplugin-events',
 );
 
 $app['core_directory_manifest'] = array(

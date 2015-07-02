@@ -162,6 +162,11 @@ RunPanicRules() {
     # Touch panic file.  Signals applications that there is something wrong.
     touch "$FW_PANIC_STAMP"
 
+    # Send/update firewall panic event
+    /usr/bin/eventsctl --send \
+        --type SYS_FW_PANIC --basename app-firewall --level critical \
+        --origin firewall-start --auto-resolve "Firewall has entered panic mode"
+
     for TABLE in filter nat mangle; do
         $IPTABLES -t $TABLE -F  # Flush all previous rules.
         $IPTABLES -t $TABLE -X  # Delete user-defined chains.
@@ -238,6 +243,9 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
             rm -f "$FW_LOCKFILE"
             exit $RC
         fi
+
+        # Resolve any out-standing firewall panic events
+        /usr/bin/eventsctl --mark-resolved --type SYS_FW_PANIC
 
         ID=`grep ^software_id /etc/product | awk '{ print $3 }'`
         /usr/bin/logger -p local6.notice -t firewall "Running post-firewall $ID"
