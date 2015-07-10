@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.0.22
+Version: 2.1.6
 Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
@@ -50,6 +50,8 @@ install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
 install -D -m 0755 packaging/snortsam-reblock %{buildroot}/usr/sbin/snortsam-reblock
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
+ln -s /etc/rc.d/init.d/firewall %{buildroot}/etc/rc.d/init.d/firewall6
+ln -s /usr/sbin/firewall-start %{buildroot}/usr/sbin/firewall-start6
 
 %post
 logger -p local6.notice -t installer 'app-firewall - installing'
@@ -99,3 +101,5 @@ exit 0
 %config(noreplace) /etc/clearos/firewall.d/local
 /usr/sbin/snortsam-reblock
 /etc/clearos/firewall.d/types
+/etc/rc.d/init.d/firewall6
+/usr/sbin/firewall-start6
