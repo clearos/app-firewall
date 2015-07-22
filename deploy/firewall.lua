@@ -396,13 +396,30 @@ function RunCommonRules()
 
     -- Block addresses that should never show up on our WAN interface
     for _, ifn in pairs(WANIF_CONFIG) do
-	if FW_PROTO == "ipv4" then
+        if FW_PROTO == "ipv4" then
             iptables("filter", "-A INPUT -i " .. ifn .. " -s 127.0.0.0/8 -j " .. FW_DROP)
             iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j " .. FW_DROP)
-	else
+        else
             iptables("filter", "-A INPUT -i " .. ifn .. " -s ::1/128 -j " .. FW_DROP)
-            iptables("filter", "-A INPUT -i " .. ifn .. " -s fe80::/10 -j " .. FW_DROP)
         end
+    end
+
+    -- IPv6 link-local, RH0 headers, and multicast
+    if FW_PROTO == "ipv6" then
+        for _, ifn in pairs(WANIF_CONFIG) do
+            -- Allow link-local in/out of external interfaces
+            iptables("filter", "-A INPUT -i " .. ifn .. " -s fe80::/10 -j " .. FW_ACCEPT)
+            iptables("filter", "-A OUTPUT -o " .. ifn .. " -s fe80::/10 -j " .. FW_ACCEPT)
+        end
+
+        -- Drop all packets that have RH0 headers
+        iptables("filter", "-A INPUT -m rt --rt-type 0 -j " .. FW_DROP)
+        iptables("filter", "-A FORWARD -m rt --rt-type 0 -j " .. FW_DROP)
+        iptables("filter", "-A OUTPUT -m rt --rt-type 0 -j " .. FW_DROP)
+
+        -- Allow IPv6 multicast in/out
+        iptables("filter", "-A INPUT -d ff00::/8 -j " .. FW_ACCEPT)
+        iptables("filter", "-A OUTPUT -d ff00::/8 -j " .. FW_ACCEPT)
     end
 
     -- Allow everything on the loopback interface
@@ -486,7 +503,7 @@ function RunCommonRules()
     end
 
     for _, ifn in pairs(WANIF_CONFIG) do
-	if FW_PROTO == "ipv4" then
+        if FW_PROTO == "ipv4" then
             -- Allow some ICMP (ping)
             --
             -- ICMP can be used for attacks.  We allow as little as possible.
@@ -500,10 +517,10 @@ function RunCommonRules()
             iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 8 -j %s", ifn, FW_ACCEPT))
             iptables("filter", string.format("-A INPUT -i %s -p icmp --icmp-type 11 -j %s", ifn, FW_ACCEPT))
             iptables("filter", string.format("-A OUTPUT -o %s -p icmp -j %s", ifn, FW_ACCEPT))
-	else
+        else
             iptables("filter", string.format("-A INPUT -i %s -p ipv6-icmp -j %s", ifn, FW_ACCEPT))
             iptables("filter", string.format("-A OUTPUT -o %s -p ipv6-icmp -j %s", ifn, FW_ACCEPT))
-	end
+        end
 
         -- Allow DHCP client to respond
         iptables("filter", "-A INPUT -i " .. ifn .. " -p udp --dport bootpc --sport bootps -j " .. FW_ACCEPT)
@@ -2654,15 +2671,15 @@ function RunMultipath()
     execute(IPBIN .. " rule add prio " .. t .. " table " .. t)
 
     if MULTIPATH ~= "on" or table.getn(SYSWATCH_WANIF) < 2 then
-    	if table.getn(SYSWATCH_WANIF) < 1 then
-    		gateway = GetInterfaceGateway(WANIF_CONFIG[1])
-    	else
-    		gateway = GetInterfaceGateway(SYSWATCH_WANIF[1])
-    	end
-		execute(IPBIN .. " route flush table " .. t)
-		execute(IPBIN .. " route add default via " .. gateway .. " table " .. t)
-		execute(IPBIN .. " route add default via " .. gateway)
-	else
+        if table.getn(SYSWATCH_WANIF) < 1 then
+            gateway = GetInterfaceGateway(WANIF_CONFIG[1])
+        else
+            gateway = GetInterfaceGateway(SYSWATCH_WANIF[1])
+        end
+        execute(IPBIN .. " route flush table " .. t)
+        execute(IPBIN .. " route add default via " .. gateway .. " table " .. t)
+        execute(IPBIN .. " route add default via " .. gateway)
+    else
         for _, ifn in pairs(WANIF) do
             for __, i in pairs(MULTIPATH_WEIGHTS) do
                 ___, ___, ifn_weight, weight = string.find(i, "(%w+)|(%w+)")
@@ -2676,7 +2693,7 @@ function RunMultipath()
 
         execute(IPBIN .. " route flush table " .. t)
         execute(IPBIN .. " route add default table " .. t .. " proto static " .. hops)
-	end
+    end
 
     -- Create interface chains
     mark = tonumber("0x8000")

@@ -2,7 +2,7 @@
 Name: app-firewall
 Epoch: 1
 Version: 2.1.6
-Release: 1%{dist}
+Release: 2%{dist}
 Summary: Firewall
 License: GPLv3
 Group: ClearOS/Apps
@@ -65,6 +65,8 @@ fi
 
 [ -x /usr/clearos/apps/firewall/deploy/upgrade ] && /usr/clearos/apps/firewall/deploy/upgrade
 
+
+
 exit 0
 
 %preun
@@ -77,6 +79,8 @@ if [ $1 -eq 0 ]; then
     logger -p local6.notice -t installer 'app-firewall-core - uninstalling'
     [ -x /usr/clearos/apps/firewall/deploy/uninstall ] && /usr/clearos/apps/firewall/deploy/uninstall
 fi
+
+
 
 exit 0
 
