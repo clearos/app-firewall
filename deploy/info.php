@@ -6,7 +6,7 @@
 
 $app['basename'] = 'firewall';
 $app['version'] = '2.1.6';
-$app['release'] = '2';
+$app['release'] = '3';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
 $app['license'] = 'GPLv3';

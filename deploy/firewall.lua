@@ -2600,6 +2600,11 @@ function RunMultipath()
     local r_port
     local r_param
 
+    -- TODO: No IPv6 support (yet).
+    if FW_PROTO == "ipv6" then
+        return
+    end
+
     echo("Running multipath")
 
     -- Remove rules
