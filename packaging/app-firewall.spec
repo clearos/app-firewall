@@ -1,8 +1,8 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.1.6
-Release: 3%{dist}
+Version: 2.1.15
+Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
 Group: ClearOS/Apps
@@ -10,7 +10,7 @@ Source: %{name}-%{version}.tar.gz
 Buildarch: noarch
 Requires: %{name}-core = 1:%{version}-%{release}
 Requires: app-base
-Requires: app-network
+Requires: app-network >= 1:2.1.13
 
 %description
 The core firewall engine for the system.
@@ -20,6 +20,7 @@ Summary: Firewall - Core
 License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
+Requires: app-events-core
 Requires: app-network-core
 Requires: csplugin-filewatch
 Requires: firewall >= 1.4.7-21
@@ -48,6 +49,7 @@ install -D -m 0755 packaging/firewall-start %{buildroot}/usr/sbin/firewall-start
 install -D -m 0644 packaging/firewall.conf %{buildroot}/etc/clearos/firewall.conf
 install -D -m 0755 packaging/firewall.init %{buildroot}/etc/rc.d/init.d/firewall
 install -D -m 0755 packaging/local %{buildroot}/etc/clearos/firewall.d/local
+install -D -m 0755 packaging/network-proxy-event %{buildroot}/var/clearos/events/network_proxy/firewall
 install -D -m 0755 packaging/snortsam-reblock %{buildroot}/usr/sbin/snortsam-reblock
 install -D -m 0755 packaging/types %{buildroot}/etc/clearos/firewall.d/types
 ln -s /etc/rc.d/init.d/firewall %{buildroot}/etc/rc.d/init.d/firewall6
@@ -65,8 +67,6 @@ fi
 
 [ -x /usr/clearos/apps/firewall/deploy/upgrade ] && /usr/clearos/apps/firewall/deploy/upgrade
 
-
-
 exit 0
 
 %preun
@@ -79,8 +79,6 @@ if [ $1 -eq 0 ]; then
     logger -p local6.notice -t installer 'app-firewall-core - uninstalling'
     [ -x /usr/clearos/apps/firewall/deploy/uninstall ] && /usr/clearos/apps/firewall/deploy/uninstall
 fi
-
-
 
 exit 0
 
@@ -103,6 +101,7 @@ exit 0
 %config(noreplace) /etc/clearos/firewall.conf
 /etc/rc.d/init.d/firewall
 %config(noreplace) /etc/clearos/firewall.d/local
+/var/clearos/events/network_proxy/firewall
 /usr/sbin/snortsam-reblock
 /etc/clearos/firewall.d/types
 /etc/rc.d/init.d/firewall6

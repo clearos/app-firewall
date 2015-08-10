@@ -5,8 +5,8 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '2.1.6';
-$app['release'] = '3';
+$app['version'] = '2.1.15';
+$app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
 $app['license'] = 'GPLv3';
@@ -27,7 +27,7 @@ $app['menu_enabled'] = FALSE;
 /////////////////////////////////////////////////////////////////////////////
 
 $app['requires'] = array(
-    'app-network',
+    'app-network >= 1:2.1.13',
 );
 
 $app['core_obsoletes'] = array(
@@ -35,6 +35,7 @@ $app['core_obsoletes'] = array(
 );
 
 $app['core_requires'] = array(
+    'app-events-core',
     'app-network-core',
     'csplugin-filewatch',
     'firewall >= 1.4.7-21',
@@ -96,5 +97,9 @@ $app['core_file_manifest'] = array(
     ),
     'filewatch-firewall.conf' => array(
         'target' => '/etc/clearsync.d/filewatch-firewall.conf',
+    ),
+    'network-proxy-event'=> array(
+        'target' => '/var/clearos/events/network_proxy/firewall',
+        'mode' => '0755'
     ),
 );
