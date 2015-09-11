@@ -30,7 +30,6 @@ $ports[] = array('normal',  'TCP', '22',    'SSH');
 $ports[] = array('normal',  'TCP', '25',    'SMTP');
 $ports[] = array('normal',  'TCP', '80',    'HTTP');
 $ports[] = array('normal',  'TCP', '81',    'Webconfig');
-$ports[] = array('normal',  'TCP', '83',    'Webmail');
 $ports[] = array('normal',  'TCP', '110',   'POP3');
 $ports[] = array('normal',  'TCP', '113',   'Ident');
 $ports[] = array('normal',  'UDP', '123',   'NTP');
