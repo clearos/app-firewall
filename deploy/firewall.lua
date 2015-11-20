@@ -2691,9 +2691,13 @@ function RunMultipath()
                 if ifn == ifn_weight then break else weight = 1 end
             end
 
-            -- Add gateway to hop list
-            hops = string.format("%s nexthop via %s dev %s weight %d",
-                hops, GetInterfaceGateway(ifn), ifn, weight)
+            for _, swifn in pairs(SYSWATCH_WANIF) do
+                if swifn == ifn then
+                    -- Add gateway to hop list
+                    hops = string.format("%s nexthop via %s dev %s weight %d",
+                        hops, GetInterfaceGateway(ifn), ifn, weight)
+                end
+            end
         end
 
         execute(IPBIN .. " route flush table " .. t)
