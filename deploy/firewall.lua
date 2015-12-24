@@ -1006,7 +1006,7 @@ function RunProxyPorts()
     if (FW_MODE == "standalone" or FW_MODE == "trustedstandalone") and bridge == false then
         if string.len(SQUID_FILTER_PORT) ~= 0 then
             echo("Blocking proxy port 3128 to force users through content filter")
-            iptables("nat", "-A PREROUTING -p tcp ! -s 127.0.0.1 --dport 3128 -j REDIRECT --to-port 82")
+            iptables("filter", "-A INPUT -p tcp ! -s 127.0.0.1 --dport 3128 -j DROP")
         end
 
     elseif SQUID_TRANSPARENT == "on" and bridge == true then
@@ -1041,7 +1041,7 @@ function RunProxyPorts()
                 WANIF_CONFIG[1], SQUID_FILTER_PORT))
 
             echo("Blocking proxy port 3128 to force users through content filter")
-            iptables("nat", "-I PREROUTING -p tcp ! -s 127.0.0.1 --dport 3128 -j REDIRECT --to-port 82")
+            iptables("filter", "-I INPUT -p tcp ! -s 127.0.0.1 --dport 3128 -j DROP")
 
         else
             echo("Enabled proxy transparent mode")
@@ -1099,7 +1099,7 @@ function RunProxyPorts()
             end
 
             echo("Blocking proxy port 3128 to force users through content filter")
-            iptables("nat", "-I PREROUTING -p tcp ! -s 127.0.0.1 --dport 3128 -j REDIRECT --to-port 82")
+            iptables("filter", "-I INPUT -p tcp ! -s 127.0.0.1 --dport 3128 -j DROP")
         else
             echo("Enabled proxy transparent mode")
 
@@ -1141,7 +1141,7 @@ function RunProxyPorts()
 
             if (string.len(SQUID_FILTER_PORT) ~= 0) then
                 echo("Blocking proxy port 3128 to force users through content filter")
-                iptables("nat", "-A PREROUTING -i " .. WANIF_CONFIG[1] .. " -p tcp --dport 3128 -j REDIRECT --to-port 82")
+                iptables("filter", "-A INPUT -i " .. WANIF_CONFIG[1] .. " -p tcp --dport 3128 -j DROP")
             end
         end
 
@@ -1172,7 +1172,7 @@ function RunProxyPorts()
             if (string.len(SQUID_FILTER_PORT) ~= 0) then
                 echo("Blocking proxy port 3128 to force users through content filter")
                 for _, ifn in pairs(GetTrustedInterfaces()) do
-                    iptables("nat", "-A PREROUTING -i " .. ifn .. " -p tcp --dport 3128 -j REDIRECT --to-port 82")
+                    iptables("filter", "-A INPUT -i " .. ifn .. " -p tcp --dport 3128 -j DROP")
                 end
 
                 for _, ifn in pairs(HOTIF) do
