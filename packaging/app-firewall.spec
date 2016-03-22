@@ -2,7 +2,7 @@
 Name: app-firewall
 Epoch: 1
 Version: 2.2.0
-Release: 1%{dist}
+Release: 2%{dist}
 Summary: Firewall
 License: GPLv3
 Group: ClearOS/Apps

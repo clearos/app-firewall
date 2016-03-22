@@ -20,10 +20,22 @@
 
 # IPv4 or IPv6?
 FW_PROTO="ipv4"
+FW_LOG_TAG="firewall"
 if [ "$(basename $0)" == "firewall-start6" ]; then
     FW_PROTO="ipv6"
+    FW_LOG_TAG="firewall6"
 fi
 export FW_PROTO
+
+# Logging
+export FW_FACILITY=${FW_FACILITY:-"local6"}
+
+fw_logger()
+{
+    log_level=$1
+    shift 1
+    /usr/bin/logger -s -p ${FW_FACILITY}.${log_level} -t ${FW_LOG_TAG} "$@"
+}
 
 # Default script to execute
 APP_LUA="/usr/clearos/apps/firewall/deploy/firewall.lua"
@@ -78,9 +90,6 @@ export RMMOD="/sbin/rmmod"
 export SYSCTL="/sbin/sysctl"
 export SYSWATCH_STATE="/var/lib/syswatch/state"
 export TCBIN="/sbin/tc"
-
-# Logging
-export FW_FACILITY=${FW_FACILITY:-"local6"}
 
 # Pretend mode?
 PRETEND=0
@@ -156,8 +165,7 @@ export MODE EXTIF LANIF HOTIF DMZIF WIFIF BANDWIDTH_QOS BANDWIDTH_UPSTREAM \
 RunPanicRules() {
     if [ $PRETEND -eq 1 ]; then return; fi
 
-    echo "Running firewall panic mode..."
-    /usr/bin/logger -p $FW_FACILITY.error -t firewall "Running firewall panic mode..."
+    fw_logger error "Running firewall panic mode..."
 
     # Touch panic file.  Signals applications that there is something wrong.
     touch "$FW_PANIC_STAMP"
@@ -248,7 +256,7 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
         /usr/bin/eventsctl --mark-resolved --type SYS_FW_PANIC
 
         ID=`grep ^software_id /etc/product | awk '{ print $3 }'`
-        /usr/bin/logger -p local6.notice -t firewall "Running post-firewall $ID"
+        fw_logger notice "Running post-firewall $ID"
 
         # Run Custom/ad-hoc rules
         # XXX: This used to be run before anything else, but because we are now
@@ -259,19 +267,17 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
         # use -I to insert rules ahead of others if need be.
         if [ -e $FW_CUSTOM ]; then
             source $FW_CUSTOM || RC=1
-            /usr/bin/logger -p local6.notice -t firewall "Running $FW_CUSTOM"
-            /usr/bin/logger -p local6.notice -t firewall -f $FW_CUSTOM
+            fw_logger notice "Running $FW_CUSTOM"
         fi
 
         if [ -e $FW_ADHOC ]; then
             source $FW_ADHOC || RC=1
-            /usr/bin/logger -p local6.notice -t firewall "Running $FW_ADHOC"
-            /usr/bin/logger -p local6.notice -t firewall -f $FW_ADHOC
+            fw_logger notice "Running $FW_ADHOC"
         fi
 
         for FW_APP in $FW_APP_RULES; do
             source $FW_APP || RC=1
-            /usr/bin/logger -p local6.notice -t firewall "Running $FW_APP"
+            fw_logger notice "Running $FW_APP"
         done
     else
         RC=1
@@ -282,7 +288,7 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
 
     rm -f "$FW_LOCKFILE"
 else
-    echo "Failed to acquire lock: $FW_LOCKFILE (held by $(cat $FW_LOCKFILE))"
+    fw_logger warning "Failed to acquire lock: $FW_LOCKFILE (held by $(cat $FW_LOCKFILE))"
     exit 1
 fi 
 
