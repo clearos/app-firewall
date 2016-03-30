@@ -5,8 +5,8 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '2.2.0';
-$app['release'] = '2';
+$app['version'] = '2.2.1';
+$app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
 $app['license'] = 'GPLv3';
@@ -50,7 +50,6 @@ $app['core_directory_manifest'] = array(
 );
 
 $app['core_symlinks'] = array(
-    '/etc/rc.d/init.d/firewall' => '/etc/rc.d/init.d/firewall6',
     '/usr/sbin/firewall-start' => '/usr/sbin/firewall-start6'
 );
 
@@ -71,20 +70,8 @@ $app['core_file_manifest'] = array(
         'config' => TRUE,
         'config_params' => 'noreplace',
     ),
-    'firewall.init' => array(
-        'target' => '/etc/rc.d/init.d/firewall',
-        'mode' => '0755',
-        'owner' => 'root',
-        'group' => 'root',
-    ),
     'firewall-start' => array(
         'target' => '/usr/sbin/firewall-start',
-        'mode' => '0755',
-        'owner' => 'root',
-        'group' => 'root',
-    ),
-    'snortsam-reblock' => array(
-        'target' => '/usr/sbin/snortsam-reblock',
         'mode' => '0755',
         'owner' => 'root',
         'group' => 'root',
