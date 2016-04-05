@@ -9,3 +9,8 @@ if [ -z "$CHECK" ]; then
     echo "/usr/clearos/apps/firewall/deploy/firewall-ppp-check \$1" >> /etc/ppp/ip-up.local
     chmod 755 /etc/ppp/ip-up.local
 fi
+
+# Reload firewall service due to systemd migration
+#-------------------------------------------------
+
+systemctl daemon-reload >/dev/null 2>&1
