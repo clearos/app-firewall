@@ -73,13 +73,13 @@ export FW_DEFAULT_MODE="trustedstandalone"
 if [ "$FW_PROTO" == "ipv4" ]; then
     APP_FW="/sbin/app-firewall"
     FW_PANIC_STAMP="/var/state/firewall/panic-stamp"
-    IPTABLES="/sbin/iptables"
+    IPTABLES="/sbin/iptables -w"
     IPBIN="/sbin/ip"
     FW_LOCKFILE="/var/run/firewall.pid"
 else
     APP_FW="/sbin/app-firewall6"
     FW_PANIC_STAMP="/var/state/firewall/panic-stamp6"
-    IPTABLES="/sbin/ip6tables"
+    IPTABLES="/sbin/ip6tables -w"
     IPBIN="/sbin/ip -6"
     FW_LOCKFILE="/var/run/firewall6.pid"
 fi
