@@ -599,6 +599,17 @@ function RunIncomingAllowed()
         end
     end
 
+    -- OpenVPN server
+    if FW_MODE == "gateway" or FW_MODE == "dmz" then
+        -- Include tunnel interfaces (OpenVPN)
+        iptables("nat", "-A POSTROUTING -o tun+ -j " .. FW_ACCEPT)
+    end
+
+    -- TODO: No IPv6 support (yet).
+    if FW_PROTO == "ipv6" then
+        return
+    end
+
     -- PPTP server
     if PPTP_SERVER == "on" then
         -- ip_nat_pptp and PPTP servers do not mix
@@ -692,12 +703,6 @@ function RunIncomingAllowed()
 
         -- Do not masquerade VPN traffic
         iptables("nat", "-A POSTROUTING -m policy --dir out --pol ipsec -j " .. FW_ACCEPT)
-    end
-
-    -- OpenVPN server
-    if FW_MODE == "gateway" or FW_MODE == "dmz" then
-        -- Include tunnel interfaces (OpenVPN)
-        iptables("nat", "-A POSTROUTING -o tun+ -j " .. FW_ACCEPT)
     end
 end
 
