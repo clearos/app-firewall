@@ -5,7 +5,7 @@
 /////////////////////////////////////////////////////////////////////////////
 
 $app['basename'] = 'firewall';
-$app['version'] = '2.2.5';
+$app['version'] = '2.2.6';
 $app['release'] = '1';
 $app['vendor'] = 'ClearFoundation';
 $app['packager'] = 'ClearFoundation';
@@ -38,7 +38,7 @@ $app['core_requires'] = array(
     'app-events-core',
     'app-network-core',
     'csplugin-filewatch',
-    'firewall >= 1.4.21-4',
+    'firewall >= 1.4.21-7',
     'iptables',
     'csplugin-events',
 );
