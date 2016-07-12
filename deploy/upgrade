@@ -14,3 +14,9 @@ fi
 #-------------------------------------------------
 
 systemctl daemon-reload >/dev/null 2>&1
+
+# FIXME: quick fix - improve for 7.3
+/sbin/chkconfig --add firewall >/dev/null 2>&1
+/sbin/chkconfig firewall on >/dev/null 2>&1
+/sbin/chkconfig --add firewall6 >/dev/null 2>&1
+/sbin/chkconfig firewall6 on >/dev/null 2>&1
