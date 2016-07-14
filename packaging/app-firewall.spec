@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.2.6
+Version: 2.2.7
 Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
