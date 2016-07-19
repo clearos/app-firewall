@@ -72,16 +72,20 @@ export FW_DEFAULT_MODE="trustedstandalone"
 # Binaries and paths
 if [ "$FW_PROTO" == "ipv4" ]; then
     APP_FW="/sbin/app-firewall"
-    FW_PANIC_STAMP="/var/state/firewall/panic-stamp"
     IPTABLES="/sbin/iptables -w"
     IPBIN="/sbin/ip"
     FW_LOCKFILE="/var/run/firewall.pid"
+    FW_PANIC="IPv4 Firewall Error - Restricted Access Only"
+    FW_PANIC_STAMP="/var/state/firewall/panic-stamp"
+    FW_PANIC_EVENTID="SYS_FW_PANIC"
 else
     APP_FW="/sbin/app-firewall6"
-    FW_PANIC_STAMP="/var/state/firewall/panic-stamp6"
     IPTABLES="/sbin/ip6tables -w"
     IPBIN="/sbin/ip -6"
     FW_LOCKFILE="/var/run/firewall6.pid"
+    FW_PANIC="IPv6 Firewall Error - Restricted Access Only"
+    FW_PANIC_STAMP="/var/state/firewall/panic-stamp6"
+    FW_PANIC_EVENTID="SYS_FW6_PANIC"
 fi
 export IPTABLES
 export IPBIN
@@ -172,8 +176,8 @@ RunPanicRules() {
 
     # Send/update firewall panic event
     /usr/bin/eventsctl --send \
-        --type SYS_FW_PANIC --basename app-firewall --level critical \
-        --origin firewall-start --auto-resolve "Firewall has entered panic mode"
+        --type $FW_PANIC_EVENTID --basename app-firewall --level critical \
+        --origin firewall-start --auto-resolve "$FW_PANIC"
 
     for TABLE in filter nat mangle; do
         $IPTABLES -t $TABLE -F  # Flush all previous rules.
@@ -253,7 +257,7 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
         fi
 
         # Resolve any out-standing firewall panic events
-        /usr/bin/eventsctl --mark-resolved --type SYS_FW_PANIC
+        /usr/bin/eventsctl --mark-resolved --type $FW_PANIC_EVENTID
 
         ID=`grep ^software_id /etc/product | awk '{ print $3 }'`
         fw_logger notice "Running post-firewall: $ID"

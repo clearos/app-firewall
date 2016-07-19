@@ -36,6 +36,7 @@ $app['core_obsoletes'] = array(
 
 $app['core_requires'] = array(
     'app-events-core',
+    'csplugin-events >= 1.0-26',
     'app-network-core',
     'csplugin-filewatch',
     'firewall >= 1.4.21-7',

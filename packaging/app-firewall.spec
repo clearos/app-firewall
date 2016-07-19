@@ -21,6 +21,7 @@ License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
 Requires: app-events-core
+Requires: csplugin-events >= 1.0-26
 Requires: app-network-core
 Requires: csplugin-filewatch
 Requires: firewall >= 1.4.21-7
