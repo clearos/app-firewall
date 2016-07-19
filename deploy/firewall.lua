@@ -1038,6 +1038,11 @@ function RunProxyPorts()
     local bridge = false;
     local SQUID_FILTER_PORT = "8080"
 
+    -- TODO: No IPv6 support (yet).
+    if FW_PROTO == "ipv6" then
+        return
+    end
+
     echo("Running user-defined proxy rules")
 
     -- TODO: In version 6, the GUI usability was improved.  Instead of making users go through
