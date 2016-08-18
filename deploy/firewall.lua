@@ -2116,6 +2116,11 @@ function RunOneToOneNat()
     local count = 200
     local t = {}
 
+    -- TODO: No IPv6 support (yet).
+    if FW_PROTO == "ipv6" then
+        return
+    end
+
     if table.getn(WANIF) == 0 then
         echo("Skipping 1-to-1 NAT rules - no active WAN interfaces")
         return
