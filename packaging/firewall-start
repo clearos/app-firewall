@@ -248,7 +248,7 @@ if (set -o noclobber; echo "$$" > "$FW_LOCKFILE") 2> /dev/null; then
         rm -f "$FW_PANIC_STAMP"
     fi
 
-    if ($APP_FW -s $@ $APP_LUA); then
+    if ($APP_FW -w -s $@ $APP_LUA); then
 
         # Exit here if we were invoked only to sync multipath routing
         if [ x$MULTIPATH_SYNC == "xtrue" ]; then
