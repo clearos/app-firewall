@@ -758,6 +758,11 @@ function RunBlockedHosts()
         end
     end
 
+    -- TODO: No IPv6 support (yet).
+    if FW_PROTO == "ipv6" then
+        return
+    end
+
     -- Open snortsam-state (if installed).
     ph = io.popen("/usr/bin/snortsam-state -qd,", "r");
 
