@@ -287,6 +287,8 @@ function LoadEnvironment()
     FW_PROTO = os.getenv("FW_PROTO")
 
     WANIF = os.getenv("EXTIF")
+    WANIF_BACKUP = os.getenv("EXTIF_BACKUP")
+    WANIF_STANDBY = os.getenv("EXTIF_STANDBY")
     SYSWATCH_WANIF = os.getenv("SYSWATCH_WANIF")
     LANIF = os.getenv("LANIF")
     HOTIF = os.getenv("HOTIF")
@@ -366,6 +368,34 @@ function LoadEnvironment()
             end
         end
         WANIF = t
+    end
+
+    if WANIF_BACKUP == nil then
+        WANIF_BACKUP = {}
+    else
+        t = {}
+        WANIF_BACKUP = Explode(" ", WANIF_BACKUP)
+        for i, ifn in pairs(WANIF_BACKUP) do
+            if ifn ~= nil and string.len(ifn) ~= 0 and string.find(ifn, ":") == nil then
+                table.insert(t, ifn)
+                debug("WANIF_BACKUP=" .. ifn)
+            end
+        end
+        WANIF_BACKUP = t
+    end
+
+    if WANIF_STANDBY == nil then
+        WANIF_STANDBY = {}
+    else
+        t = {}
+        WANIF_STANDBY = Explode(" ", WANIF_STANDBY)
+        for i, ifn in pairs(WANIF_STANDBY) do
+            if ifn ~= nil and string.len(ifn) ~= 0 and string.find(ifn, ":") == nil then
+                table.insert(t, ifn)
+                debug("WANIF_STANDBY=" .. ifn)
+            end
+        end
+        WANIF_STANDBY = t
     end
 
     if LANIF == nil then
@@ -845,6 +875,18 @@ function NetworkInterfaces()
         end
     end
 
+    for _, ifn in pairs(WANIF_BACKUP) do
+        if string.len(ifn) ~= 0 and if_exists(ifn) then
+            table.insert(difs, ifn)
+        end
+    end
+
+    for _, ifn in pairs(WANIF_STANDBY) do
+        if string.len(ifn) ~= 0 and if_exists(ifn) then
+            table.insert(difs, ifn)
+        end
+    end
+
     for _, ifn in pairs(LANIF) do
         if string.len(ifn) ~= 0 and if_exists(ifn) then
             table.insert(difs, ifn)
@@ -891,6 +933,14 @@ function NetworkInterfaces()
     -- Display detected interface roles
     for _, ifn in pairs(WANIF) do
         echo("Detected WAN role for interface: " .. ifn)
+    end
+
+    for _, ifn in pairs(WANIF_BACKUP) do
+        echo("Detected WAN backup role for interface: " .. ifn)
+    end
+
+    for _, ifn in pairs(WANIF_STANDBY) do
+        echo("Detected WAN stand-by role for interface: " .. ifn)
     end
 
     for _, ifn in pairs(BAKIF) do
