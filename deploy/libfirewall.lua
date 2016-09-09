@@ -960,6 +960,19 @@ function NetworkInterfaces()
     SYSWATCH_WANIF = PruneInterfaceTable(SYSWATCH_WANIF, nil)
     BAKIF = PruneInterfaceTable(BAKIF, nil)
 
+    -- Further prune any stand-by interfaces from WAN table
+    difs = {}
+    for _, ifn_wan in pairs(WANIF) do
+        f = false
+        for __, ifn in pairs(WANIF_STANDBY) do
+            if ifn_wan == ifn then f = true end
+        end
+        if f == false then
+            table.insert(difs, ifn_wan)
+        end
+    end
+    WANIF = difs
+
     if table.getn(WANIF) == 0 then
         echo("WARNING: No configured WAN interfaces, continuing anyway...")
     end
@@ -985,7 +998,8 @@ end
 -- PruneInterfaceTable
 --
 -- Remove interfaces with no IP address, or down from a table
--- if message is not nil, echo a warning message explaining why an interface is removed from the table
+-- if message is not nil, echo a warning message explaining why an interface
+-- is removed from the table
 --
 ------------------------------------------------------------------------------
 

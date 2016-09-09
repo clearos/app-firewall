@@ -528,6 +528,14 @@ function RunCommonRules()
         iptables("filter", "-A OUTPUT -o " .. ifn .. " -p udp --sport bootpc --dport bootps -j " .. FW_ACCEPT)
         iptables("filter", "-A OUTPUT -o " .. ifn .. " -p tcp --sport bootpc --dport bootps -j " .. FW_ACCEPT)
     end
+
+    -- Drop everything else for stand-by interfaces
+    for _, ifn in pairs(WANIF_STANDBY) do
+        iptables("filter", "-A INPUT -i " .. ifn .. " -j " .. FW_DROP)
+        iptables("filter", "-A OUTPUT -o " .. ifn .. " -j " .. FW_DROP)
+        iptables("filter", "-A FORWARD -i " .. ifn .. " -j " .. FW_DROP)
+        iptables("filter", "-A FORWARD -o " .. ifn .. " -j " .. FW_DROP)
+    end
 end
 
 ------------------------------------------------------------------------------
@@ -2713,13 +2721,16 @@ function RunMultipath()
         end
     end
 
+    -- Always flush table 250...
+    execute(IPBIN .. " route flush table 250")
+
     if table.getn(WANIF) < 2 then
         -- Flush cached routes so our changes will take effect
         execute(IPBIN .. " route flush cache")
         return
     end
 
-    echo("Running Multi-path routing")
+    echo("Running multipath routing")
 
     -- Sort WAN interfaces
     table.sort(WANIF)
@@ -2752,7 +2763,6 @@ function RunMultipath()
         else
             gateway = GetInterfaceGateway(SYSWATCH_WANIF[1])
         end
-        execute(IPBIN .. " route flush table " .. t)
         execute(IPBIN .. " route add default via " .. gateway .. " table " .. t)
         execute(IPBIN .. " route add default via " .. gateway)
     else
@@ -2771,7 +2781,6 @@ function RunMultipath()
             end
         end
 
-        execute(IPBIN .. " route flush table " .. t)
         execute(IPBIN .. " route add default table " .. t .. " proto static " .. hops)
     end
 
