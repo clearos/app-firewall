@@ -47,6 +47,25 @@ if [ "$1" == "--multipath-sync" ]; then
     APP_LUA="/usr/clearos/apps/firewall/deploy/multipath-sync.lua"
 fi
 
+# Build a list of configured SSHd ports
+SSHD_CONF=/etc/ssh/sshd_config
+if [ -f "${SSHD_CONF}" ]; then
+    LISTEN_ADDR="^ListenAddress[[:space:]]*"
+
+    ANY_PORTS=$(egrep '^Port' ${SSHD_CONF} |\
+        sed -e 's/^Port[[:space:]]*//g')
+    IP4_PORTS=$(egrep "${LISTEN_ADDR}[0-9]" ${SSHD_CONF} |\
+        sed -e "s/${LISTEN_ADDR}//g" -e 's/:/ /g' | awk '{ print $2 }')
+    IP6_PORTS=$(egrep "${LISTEN_ADDR}\[" ${SSHD_CONF} |\
+        sed -e "s/${LISTEN_ADDR}\[//g" -e 's/\]:/ /g' | awk '{ print $2 }')
+fi
+
+SSHD_PORTS_IP4=$(echo -n ${ANY_PORTS} ${IP4_PORTS} | xargs -n 1 | sort -n | uniq)
+SSHD_PORTS_IP6=$(echo -n ${ANY_PORTS} ${IP6_PORTS} | xargs -n 1 | sort -n | uniq)
+
+[ -z "${SSHD_PORTS_IP4}" ] && SSHD_PORTS_IP4=22
+[ -z "${SSHD_PORTS_IP6}" ] && SSHD_PORTS_IP6=22
+
 # ACCEPT and DROP default chain names
 export FW_DROP="DROP"
 export FW_ACCEPT="ACCEPT"
@@ -69,7 +88,7 @@ export PROTOCOL_CONF="/etc/clearos/protocol_filter.conf"
 # Default mode
 export FW_DEFAULT_MODE="trustedstandalone"
 
-# Binaries and paths
+# Binaries and paths and IPv4/6-specific settings
 if [ "$FW_PROTO" == "ipv4" ]; then
     APP_FW="/sbin/app-firewall"
     IPTABLES="/sbin/iptables -w"
@@ -78,6 +97,7 @@ if [ "$FW_PROTO" == "ipv4" ]; then
     FW_PANIC="IPv4 Firewall Error - Restricted Access Only"
     FW_PANIC_STAMP="/var/state/firewall/panic-stamp"
     FW_PANIC_EVENTID="SYS_FW_PANIC"
+    SSHD_PORTS=${SSHD_PORTS_IP4}
 else
     APP_FW="/sbin/app-firewall6"
     IPTABLES="/sbin/ip6tables -w"
@@ -86,7 +106,9 @@ else
     FW_PANIC="IPv6 Firewall Error - Restricted Access Only"
     FW_PANIC_STAMP="/var/state/firewall/panic-stamp6"
     FW_PANIC_EVENTID="SYS_FW6_PANIC"
+    SSHD_PORTS=${SSHD_PORTS_IP6}
 fi
+
 export IPTABLES
 export IPBIN
 export MODPROBE="/sbin/modprobe"
@@ -197,11 +219,15 @@ RunPanicRules() {
     $IPTABLES -A INPUT -p $ICMP -j $FW_ACCEPT
     $IPTABLES -A OUTPUT -p $ICMP -j $FW_ACCEPT
 
-    # Open 81 and 22
+    # Open Webconfig
     $IPTABLES -I INPUT -p tcp --dport 81 -j $FW_ACCEPT
     $IPTABLES -I OUTPUT -p tcp --sport 81 -j $FW_ACCEPT
-    $IPTABLES -I INPUT -p tcp --dport 22 -j $FW_ACCEPT
-    $IPTABLES -I OUTPUT -p tcp --sport 22 -j $FW_ACCEPT
+
+    # Open SSHd
+    for PORT in ${SSHD_PORTS}; do
+        $IPTABLES -I INPUT -p tcp --dport ${PORT} -j $FW_ACCEPT
+        $IPTABLES -I OUTPUT -p tcp --sport ${PORT} -j $FW_ACCEPT
+    done
 
     # Allow DNS requests
     $IPTABLES -A INPUT -p udp --sport domain -j $FW_ACCEPT
