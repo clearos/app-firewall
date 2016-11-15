@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.2.14
+Version: 2.2.15
 Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
@@ -21,7 +21,7 @@ License: LGPLv3
 Group: ClearOS/Libraries
 Requires: app-base-core
 Requires: app-events-core
-Requires: csplugin-events >= 1.0-26
+Requires: csplugin-events >= 1.1
 Requires: app-network-core
 Requires: csplugin-filewatch
 Requires: firewall >= 1.4.21-9

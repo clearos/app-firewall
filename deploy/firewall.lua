@@ -401,6 +401,7 @@ function RunCommonRules()
             iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j " .. FW_DROP)
         else
             iptables("filter", "-A INPUT -i " .. ifn .. " -s ::1/128 -j " .. FW_DROP)
+            iptables("filter", "-A INPUT -i " .. ifn .. " -s fe80::/10 -j " .. FW_DROP)
         end
     end
 
@@ -2392,12 +2393,15 @@ function RunMasquerading()
     local network
     local prefix
 
+    echo("Running Masquerading")
+
     -- Do not masquerade traffic originating from DMZ networks
+    -- TODO: No IPv6 support for DMZ networks (yet).
     -- TODO: This will only catch traffic for the immediate DMZ network,
     -- traffic from other networks behind a DMZ for example, will end up being
     -- masqueraded.
     for _, ifn in pairs(DMZIF) do
-        if if_exists(ifn) then
+        if if_exists(ifn) and FW_PROTO == "ipv4" then
             __, __, network, prefix = GetInterfaceInfo(ifn)
             iptables("nat", string.format("-A POSTROUTING -s %s/%s -j ACCEPT",
                 network, prefix))
@@ -2554,6 +2558,12 @@ end
 ------------------------------------------------------------------------------
 
 function RunForwardingDmz()
+
+    -- TODO: No IPv6 support (yet).
+    if FW_PROTO == "ipv6" then
+        return
+    end
+
     echo("Running default DMZ rules")
 
     for _, ifn in pairs(DMZIF) do
