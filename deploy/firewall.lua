@@ -1142,7 +1142,7 @@ function RunProxyPorts()
     if (FW_MODE == "standalone" or FW_MODE == "trustedstandalone") and bridge == false then
         if string.len(SQUID_FILTER_PORT) ~= 0 then
             echo("Blocking proxy port 3128 to force users through content filter")
-            iptables("filter", "-A INPUT -p tcp ! -s 127.0.0.1 --dport 3128 -j DROP")
+            iptables("filter", "-I INPUT -p tcp ! -s 127.0.0.1 --dport 3128 -j DROP")
         end
 
     elseif SQUID_TRANSPARENT == "on" and bridge == true then
@@ -1277,7 +1277,7 @@ function RunProxyPorts()
 
             if (string.len(SQUID_FILTER_PORT) ~= 0) then
                 echo("Blocking proxy port 3128 to force users through content filter")
-                iptables("filter", "-A INPUT -i " .. WANIF_CONFIG[1] .. " -p tcp --dport 3128 -j DROP")
+                iptables("filter", "-I INPUT -i " .. WANIF_CONFIG[1] .. " -p tcp --dport 3128 -j DROP")
             end
         end
 
@@ -1308,7 +1308,7 @@ function RunProxyPorts()
             if (string.len(SQUID_FILTER_PORT) ~= 0) then
                 echo("Blocking proxy port 3128 to force users through content filter")
                 for _, ifn in pairs(GetTrustedInterfaces()) do
-                    iptables("filter", "-A INPUT -i " .. ifn .. " -p tcp --dport 3128 -j DROP")
+                    iptables("filter", "-I INPUT -i " .. ifn .. " -p tcp --dport 3128 -j DROP")
                 end
 
                 for _, ifn in pairs(HOTIF) do
