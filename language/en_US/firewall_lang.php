@@ -53,6 +53,7 @@ $lang['firewall_role'] = 'Role';
 $lang['firewall_rule_already_exists'] = 'Rule already exists.';
 $lang['firewall_rule_exists'] = 'The rule already exists.';
 $lang['firewall_rule_invalid:'] = 'Rule is invalid:';
+$lang['firewall_rule_invalid'] = 'Rule is invalid.';
 $lang['firewall_rule_missing'] = 'No rule specified.';
 $lang['firewall_rule_not_found'] = 'Rule does not exist.';
 $lang['firewall_rule'] = 'Rule';
