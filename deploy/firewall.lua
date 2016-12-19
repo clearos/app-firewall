@@ -2506,6 +2506,11 @@ function RunForwardingDefaults()
         echo("Egress filter enabled, blocking all outgoing traffic (except ICMP) by default")
     end
 
+    -- Allow VPN interfaces
+    iptables("filter", "-A FORWARD -i pptp+ -j " .. accept_target)
+    iptables("filter", "-A FORWARD -i tun+ -j " .. accept_target)
+
+    -- Allow or drop forwarded traffic depending on egress filter settings
     for _, ifn in pairs(LANIF) do
         if EGRESS_FILTERING == "off" then
             iptables("filter", "-A FORWARD -i " .. ifn .. " -j " .. accept_target)
@@ -2513,21 +2518,24 @@ function RunForwardingDefaults()
             if if_exists(ifn) then
                 __, netmask, network, __= GetInterfaceInfo(ifn)
 
-                iptables("filter",
-                    string.format("-A FORWARD -p icmp --icmp-type 0 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
-                iptables("filter",
-                    string.format("-A FORWARD -p icmp --icmp-type 8 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
-                iptables("filter",
-                    string.format("-A FORWARD -p icmp --icmp-type 11 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
-                iptables("filter",
-                    string.format("-A FORWARD -s %s/%s -j %s", network, netmask, FW_DROP))
+                if FW_PROTO == "ipv4" then
+                    iptables("filter",
+                        string.format("-A FORWARD -p icmp --icmp-type 0 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
+                    iptables("filter",
+                        string.format("-A FORWARD -p icmp --icmp-type 8 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
+                    iptables("filter",
+                        string.format("-A FORWARD -p icmp --icmp-type 11 -s %s/%s -j %s", network, netmask, FW_ACCEPT))
+                    iptables("filter",
+                        string.format("-A FORWARD -s %s/%s -j %s", network, netmask, FW_DROP))
+                else
+                    iptables("filter",
+                        string.format("-A FORWARD -p ipv6-icmp -j %s", FW_ACCEPT))
+                    iptables("filter",
+                        string.format("-A FORWARD -j %s", FW_DROP))
+                end
             end
         end
     end
-
-    -- Allow VPN interfaces
-    iptables("filter", "-A FORWARD -i pptp+ -j " .. accept_target)
-    iptables("filter", "-A FORWARD -i tun+ -j " .. accept_target)
 end
 
 ------------------------------------------------------------------------------
