@@ -401,7 +401,6 @@ function RunCommonRules()
             iptables("filter", "-A INPUT -i " .. ifn .. " -s 169.254.0.0/16 -j " .. FW_DROP)
         else
             iptables("filter", "-A INPUT -i " .. ifn .. " -s ::1/128 -j " .. FW_DROP)
-            iptables("filter", "-A INPUT -i " .. ifn .. " -s fe80::/10 -j " .. FW_DROP)
         end
     end
 
