@@ -246,7 +246,7 @@ end
 --
 ------------------------------------------------------------------------------
 
-function CalculateRateToQuantum(rate)
+function CalculateRateToQuantum(ifn, rate)
     local r2q = 1
     local quantum = 20000
 
@@ -257,7 +257,7 @@ function CalculateRateToQuantum(rate)
 
     r2q = r2q - 2
     quantum = (rate * 1000 / 8) / r2q
-    debug("Auto-r2q for minimum rate " .. rate ..
+    debug("Auto-r2q for " .. ifn .. " minimum rate " .. rate ..
         ": " .. r2q .. " (quantum: " .. quantum .. ")")
 
     return r2q
