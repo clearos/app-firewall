@@ -1,7 +1,7 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.2.21
+Version: 2.3.20
 Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
@@ -87,6 +87,7 @@ exit 0
 %files core
 %defattr(-,root,root)
 %exclude /usr/clearos/apps/firewall/packaging
+%exclude /usr/clearos/apps/firewall/unify.json
 %dir /usr/clearos/apps/firewall
 %dir /etc/clearos/firewall.d
 %dir /var/clearos/firewall
