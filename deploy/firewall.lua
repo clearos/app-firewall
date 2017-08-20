@@ -732,18 +732,6 @@ function RunBlockedHosts()
     local r_addr
     local r_port
     local r_param
-    local ph
-    local line
-    local ss_sid
-    local ss_blocked_host
-    local ss_peer_host
-    local ss_port
-    local ss_proto
-    local ss_timestamp
-    local ss_duration
-    local ss_mode
-    local ss_crc
-
     echo("Running blocked external rules")
 
     -- Block host rules
@@ -764,49 +752,6 @@ function RunBlockedHosts()
                 iptables("filter", string.format("-A OUTPUT -d %s -j %s", r_addr, FW_DROP))
             end
         end
-    end
-
-    -- TODO: No IPv6 support (yet).
-    if FW_PROTO == "ipv6" then
-        return
-    end
-
-    -- Open snortsam-state (if installed).
-    ph = io.popen("/usr/bin/snortsam-state -qd,", "r");
-
-    -- SID,Blocked Host,Peer Host,Port,Protocol,Timestamp,Duration,Mode,CRC
-    -- 3100001,42.112.249.91,42.112.249.91,0,ip,1471547640,86400,0x74,2c02e21a
-    if ph ~= nil then
-        for line in ph:lines() do
-            __, __,
-            ss_sid, ss_blocked_host, ss_peer_host,
-            ss_port, ss_proto, ss_timestamp, ss_duration,
-            ss_mode, ss_crc = string.find(line,
-                "^(%d+),([%d%.]+),([%d%.]+),(%d+),(%w+),(%d+),(%d+),([x%d%x]+),(%x+)$")
-            if ss_timestamp + ss_duration > os.time() then
-                for __, ifn in pairs(WANIF) do
-                    if if_exists(ifn) then
-                        iptables("filter",
-                            string.format("-A INPUT -i %s -s %s -j %s",
-                            ifn, ss_blocked_host, FW_DROP))
-                        iptables("filter",
-                            string.format("-A INPUT -i %s -d %s -j %s",
-                            ifn, ss_blocked_host, FW_DROP))
-                        iptables("filter",
-                            string.format("-A OUTPUT -o %s -d %s -j %s",
-                            ifn, ss_blocked_host, FW_DROP))
-                        iptables("filter",
-                            string.format("-A FORWARD -i %s -s %s -j %s",
-                            ifn, ss_blocked_host, FW_DROP))
-                        iptables("filter",
-                            string.format("-A FORWARD -o %s -d %s -j %s",
-                            ifn, ss_blocked_host, FW_DROP))
-                    end
-                end
-            end
-        end
-
-        io.close(ph)
     end
 end
 
