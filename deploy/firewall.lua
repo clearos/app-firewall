@@ -289,6 +289,8 @@ function LoadKernelModules()
         end
     end
 
+    -- ipset support
+    table.insert(modules, "ip_set")
     -- Connection tracking for FTP
     table.insert(modules, "ip_conntrack_ftp")
     -- Connection tracking for IRC
