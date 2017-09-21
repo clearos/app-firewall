@@ -273,7 +273,8 @@ function LoadKernelModules()
         -- Connection tracking
         table.insert(modules, "nf_conntrack_ipv4")
         -- IMQ for bandwidth QoS
-        if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
+        if BANDWIDTH_QOS == "on" or
+            (QOS_ENABLE == "on" and QOS_ENABLE_IFB == "no") then
             table.insert(modules, "ipt_IMQ")
         end
     else
@@ -284,7 +285,8 @@ function LoadKernelModules()
         -- Connection tracking
         table.insert(modules, "nf_conntrack_ipv6")
         -- IMQ for bandwidth QoS
-        if BANDWIDTH_QOS == "on" or QOS_ENABLE == "on" then
+        if BANDWIDTH_QOS == "on" or
+            (QOS_ENABLE == "on" and QOS_ENABLE_IFB == "no") then
             table.insert(modules, "ip6t_IMQ")
         end
     end
@@ -1528,8 +1530,19 @@ function RunBandwidthEngine()
         end
     end
 
+    -- Bring down all IFB interfaces
+    for _, ifn in pairs(if_list()) do
+        if string.find(ifn, "^ifb[0-9]") then
+            execute(IPBIN .. " link set " .. ifn .. " down 2>/dev/null")
+        end
+    end
+
     -- Remove IMQ module
     execute(RMMOD .. " imq 2>/dev/null");
+    -- Remove IFB module
+    execute(RMMOD .. " ifb 2>/dev/null");
+    -- Remove mirred action module
+    execute(RMMOD .. " act_mirred 2>/dev/null");
 
     -- Remove any qdisc associated with all external interfaces
     for _, ifn in pairs(WANIF_CONFIG) do

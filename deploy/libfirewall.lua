@@ -306,6 +306,7 @@ function LoadEnvironment()
     BANDWIDTH_DOWNSTREAM_CBURST = os.getenv("BANDWIDTH_DOWNSTREAM_CBURST")
 
     QOS_ENABLE = os.getenv("QOS_ENABLE")
+    QOS_ENABLE_IFB = os.getenv("QOS_ENABLE_IFB")
     QOS_ENGINE = os.getenv("QOS_ENGINE")
     QOS_UPSTREAM = os.getenv("QOS_UPSTREAM")
     QOS_DOWNSTREAM = os.getenv("QOS_DOWNSTREAM")
