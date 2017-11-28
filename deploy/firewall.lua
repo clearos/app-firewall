@@ -274,7 +274,7 @@ function LoadKernelModules()
         table.insert(modules, "nf_conntrack_ipv4")
         -- IMQ for bandwidth QoS
         if BANDWIDTH_QOS == "on" or
-            (QOS_ENABLE == "on" and QOS_ENABLE_IFB == "no") then
+            (QOS_ENABLE == "on" and QOS_ENABLE_IFB ~= "yes") then
             table.insert(modules, "ipt_IMQ")
         end
     else
@@ -286,7 +286,7 @@ function LoadKernelModules()
         table.insert(modules, "nf_conntrack_ipv6")
         -- IMQ for bandwidth QoS
         if BANDWIDTH_QOS == "on" or
-            (QOS_ENABLE == "on" and QOS_ENABLE_IFB == "no") then
+            (QOS_ENABLE == "on" and QOS_ENABLE_IFB ~= "yes") then
             table.insert(modules, "ip6t_IMQ")
         end
     end
