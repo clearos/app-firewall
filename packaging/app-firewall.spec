@@ -1,11 +1,13 @@
 
 Name: app-firewall
 Epoch: 1
-Version: 2.4.25
+Version: 2.5.0
 Release: 1%{dist}
 Summary: Firewall
 License: GPLv3
-Group: ClearOS/Apps
+Group: Applications/Apps
+Packager: ClearFoundation
+Vendor: ClearFoundation
 Source: %{name}-%{version}.tar.gz
 Buildarch: noarch
 Requires: %{name}-core = 1:%{version}-%{release}
@@ -16,15 +18,16 @@ Requires: app-network >= 1:2.1.13
 The core firewall engine for the system.
 
 %package core
-Summary: Firewall - Core
+Summary: Firewall - API
 License: LGPLv3
-Group: ClearOS/Libraries
+Group: Applications/API
 Requires: app-base-core
 Requires: app-events-core
-Requires: csplugin-events >= 1.1
 Requires: app-network-core
+Requires: csplugin-events >= 1.1
 Requires: csplugin-filewatch
 Requires: firewall >= 1.4.21-9
+Requires: firewalld
 Requires: iptables
 Requires: csplugin-events
 Obsoletes: iptables-services

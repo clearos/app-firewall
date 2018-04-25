@@ -5,9 +5,21 @@
 
 CHECK=`grep '/usr/clearos/apps/firewall/deploy/firewall-ppp-check' /etc/ppp/ip-up.local 2>/dev/null`
 if [ -z "$CHECK" ]; then
-    logger -p local6.notice -t installer "app-firewall-core - adding PPTP and multiwan support for PPP up"
+    logger -p local6.notice -t installer "app-firewall - adding PPTP and multiwan support for PPP up"
     echo "/usr/clearos/apps/firewall/deploy/firewall-ppp-check \$1" >> /etc/ppp/ip-up.local
     chmod 755 /etc/ppp/ip-up.local
+fi
+
+# Disable firewalld if it exists
+#-------------------------------
+
+# Migrate from app-base
+[ -e /var/clearos/base/firewalld_disabled ] && touch /var/clearos/firewall/firewalld_disabled
+
+if ( [ -e /usr/sbin/firewalld ] && [ ! -e /var/clearos/firewall/firewalld_disabled ] ); then
+    logger -p local6.notice -t installer "app-firewall - disabling firewalld"
+    chkconfig firewalld off >/dev/null 2>&1
+    touch /var/clearos/base/firewalld_disabled
 fi
 
 # Reload firewall service due to systemd migration
